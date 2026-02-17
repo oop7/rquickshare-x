@@ -30,7 +30,7 @@ mod utils;
 
 pub use hdl::{EndpointInfo, OutboundPayload, State, Visibility};
 pub use manager::SendInfo;
-pub use utils::DeviceType;
+pub use utils::{get_hostname, DeviceType};
 
 pub mod sharing_nearby {
     include!(concat!(env!("OUT_DIR"), "/sharing.nearby.rs"));

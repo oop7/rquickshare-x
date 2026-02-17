@@ -14,6 +14,36 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  build_windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-directories: |
+            ${{ github.workspace }}/core_lib/target
+            ${{ github.workspace }}/app/main/src-tauri/target
+      - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check core_lib on Windows
+        run: |
+          cd ./core_lib
+          cargo check
+
+      - name: Check Tauri backend on Windows
+        run: |
+          cd ./app/main/src-tauri
+          cargo check
+
   build_core:
     runs-on: ${{ matrix.os }}
     strategy:

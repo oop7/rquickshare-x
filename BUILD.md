@@ -30,7 +30,7 @@ pnpm install
 pnpm dev
 ```
 
-- To build a release package (.deb & .AppImage & .rpm & .dmg (only on macos)):
+- To build a release package (.deb, .AppImage, .rpm, .dmg on macOS, and .msi/.exe on Windows):
 
 ```
 pnpm build
@@ -42,7 +42,7 @@ For more detailed information on building the app/main and understanding any pot
 
 Everything is the same as the app/main one, except the output of the build :)
 
-- To build a release package (.deb & .AppImage):
+- To build a release package (.deb, .AppImage, .rpm, .dmg on macOS, and .msi/.exe on Windows):
 
 ```
 pnpm build

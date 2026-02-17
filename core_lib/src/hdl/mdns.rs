@@ -9,7 +9,7 @@ use tokio::time::{interval_at, Instant};
 use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
 
-use crate::utils::{gen_mdns_endpoint_info, gen_mdns_name, DeviceType};
+use crate::utils::{gen_mdns_endpoint_info, gen_mdns_name, get_hostname, DeviceType};
 
 const INNER_NAME: &str = "MDnsServer";
 const TICK_INTERVAL: Duration = Duration::from_secs(60);
@@ -136,7 +136,7 @@ impl MDnsServer {
         device_type: DeviceType,
     ) -> Result<ServiceInfo, anyhow::Error> {
         let name = gen_mdns_name(endpoint_id);
-        let hostname = sys_metrics::host::get_hostname()?;
+        let hostname = get_hostname();
         info!("Broadcasting with: {hostname}");
         let endpoint_info = gen_mdns_endpoint_info(device_type as u8, &hostname);
 

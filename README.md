@@ -2,7 +2,7 @@
   <h1>rquickshare</h1>
 
   <p>
-    <strong>NearbyShare/QuickShare for Linux and MacOS</strong>
+    <strong>NearbyShare/QuickShare for Linux, macOS and Windows</strong>
   </p>
   <p>
 
@@ -31,6 +31,10 @@ You simply have to download the latest release.
 Simply install the .dmg.
 
 Note that you may have to first allow the app to install under `Settings > Privacy & Security > Security` (you should see a dialog asking for permission)
+
+#### Windows
+
+Install the `.msi` or `.exe` package from the latest release and run it.
 
 #### Linux
 
@@ -196,7 +200,7 @@ Alternatively, you may try the `legacy` variant.
 WIP Notes
 --------------------------
 
-`rquickshare` is still in development (WIP) and currently only supports Linux even though it should be compatible with macOS too. Keep in mind that the design may change between versions, so flexibility is key.
+`rquickshare` is still in development (WIP). Support currently targets Linux, macOS and Windows. Keep in mind that the design may change between versions, so flexibility is key.
 
 Got feedback or suggestions? We'd love to hear them! Feel free to open an issue and share your thoughts.
 

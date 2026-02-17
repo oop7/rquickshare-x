@@ -1,5 +1,25 @@
 # Changelog
 
+## [Unreleased]
+
+
+### Features
+
+* add Windows support for core and Tauri backend builds
+* publish Windows release artifacts (`.msi` and `.exe`) in release workflow
+
+
+### Bug Fixes
+
+* replace unix-only hostname/paths in Rust code with cross-platform implementations
+* fix cross-platform file transfer I/O and metadata handling for Windows
+
+
+### Miscellaneous Chores
+
+* add Windows CI checks for `core_lib` and `app/main/src-tauri`
+* update docs to list Windows as a supported platform
+
 ## [0.11.5](https://github.com/Martichou/rquickshare/compare/v0.11.4...v0.11.5) (2025-02-23)
 
 

@@ -182,6 +182,14 @@ pub fn gen_random(size: usize) -> Vec<u8> {
     data
 }
 
+pub fn get_hostname() -> String {
+    hostname::get()
+        .ok()
+        .and_then(|h| h.into_string().ok())
+        .filter(|h| !h.is_empty())
+        .unwrap_or_else(|| String::from("Unknown"))
+}
+
 pub fn get_download_dir() -> PathBuf {
     let cdown = CUSTOM_DOWNLOAD.read();
     match cdown {

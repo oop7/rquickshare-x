@@ -1,5 +1,8 @@
 use std::fs::File;
+#[cfg(unix)]
 use std::os::unix::fs::FileExt;
+#[cfg(windows)]
+use std::os::windows::fs::FileExt;
 use std::time::Duration;
 
 use anyhow::anyhow;
@@ -44,6 +47,27 @@ type HmacSha256 = Hmac<Sha256>;
 
 const SANE_FRAME_LENGTH: i32 = 5 * 1024 * 1024;
 const SANITY_DURATION: Duration = Duration::from_micros(10);
+
+fn write_all_at(file: &File, mut data: &[u8], mut offset: u64) -> Result<(), std::io::Error> {
+    while !data.is_empty() {
+        #[cfg(unix)]
+        let written = file.write_at(data, offset)?;
+        #[cfg(windows)]
+        let written = file.seek_write(data, offset)?;
+
+        if written == 0 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::WriteZero,
+                "failed to write payload chunk",
+            ));
+        }
+
+        offset += written as u64;
+        data = &data[written..];
+    }
+
+    Ok(())
+}
 
 #[derive(Debug)]
 pub struct InboundRequest {
@@ -652,11 +676,8 @@ impl InboundRequest {
                         }
 
                         if !chunk.body().is_empty() {
-                            file_internal
-                                .file
-                                .as_ref()
-                                .unwrap()
-                                .write_all_at(chunk.body(), current_offset as u64)?;
+                            let file = file_internal.file.as_ref().unwrap();
+                            write_all_at(file, chunk.body(), current_offset as u64)?;
                             file_internal.bytes_transferred += chunk_size as i64;
 
                             self.update_state(

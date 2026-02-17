@@ -2057,6 +2057,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "hostname"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "617aaa3557aef3810a6369d0a99fac8a080891b68bd9f9812a1eeda0c0730cbd"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "windows-link",
+]
+
+[[package]]
 name = "html5ever"
 version = "0.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2403,16 +2414,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "io-kit-sys"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b2d4429acc1deff0fbdece0325b4997bdb02b2c245ab7023fd5deca0f6348de"
-dependencies = [
- "core-foundation-sys",
- "mach2",
-]
-
-[[package]]
 name = "ipnet"
 version = "2.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2728,24 +2729,6 @@ name = "macaddr"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baee0bbc17ce759db233beb01648088061bf678383130602a298e6998eedb2d8"
-
-[[package]]
-name = "mach"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b823e83b2affd8f40a9ee8c29dbc56404c1e34cd2710921f2801e2cf29527afa"
-dependencies = [
- "libc",
-]
-
-[[package]]
-name = "mach2"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19b955cdeb2a02b9117f121ce63aa52d08ade45de53e48fe6a38b39c10f6f709"
-dependencies = [
- "libc",
-]
 
 [[package]]
 name = "malloc_buf"
@@ -4235,6 +4218,7 @@ dependencies = [
  "hex",
  "hkdf",
  "hmac",
+ "hostname",
  "libaes",
  "log",
  "mdns-sd",
@@ -4247,7 +4231,6 @@ dependencies = [
  "rand 0.9.0",
  "serde",
  "sha2",
- "sys_metrics 0.2.7 (git+https://github.com/Martichou/sys_metrics)",
  "tokio",
  "tokio-util",
  "tracing-subscriber",
@@ -4267,7 +4250,6 @@ dependencies = [
  "rqs_lib",
  "serde",
  "serde_json",
- "sys_metrics 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "tauri",
  "tauri-build",
  "tauri-plugin-autostart",
@@ -4930,35 +4912,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.95",
-]
-
-[[package]]
-name = "sys_metrics"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9b266b80f59f86e2e1e0a4938e316e32c3730d94a749f236305152279f77484"
-dependencies = [
- "core-foundation-sys",
- "glob",
- "io-kit-sys",
- "lazy_static",
- "libc",
- "mach",
- "serde",
-]
-
-[[package]]
-name = "sys_metrics"
-version = "0.2.7"
-source = "git+https://github.com/Martichou/sys_metrics#e5b324a17d1724bd97923a173c3535cc06a44b0c"
-dependencies = [
- "core-foundation-sys",
- "glob",
- "io-kit-sys",
- "lazy_static",
- "libc",
- "mach",
- "serde",
 ]
 
 [[package]]
@@ -6478,6 +6431,12 @@ dependencies = [
  "quote",
  "syn 2.0.95",
 ]
+
+[[package]]
+name = "windows-link"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
 
 [[package]]
 name = "windows-registry"
