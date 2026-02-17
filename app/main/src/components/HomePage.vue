@@ -48,6 +48,9 @@
 							<p class="mt-2" v-else>
 								Receiving...
 							</p>
+							<p class="text-xs mt-1" v-if="formatTransferMetrics(item.id, item)">
+								{{ formatTransferMetrics(item.id, item) }}
+							</p>
 							<p v-for="f in item.files ?? []" :key="f" class="overflow-hidden whitespace-nowrap text-ellipsis">
 								{{ f }}
 							</p>
@@ -205,6 +208,13 @@ export default {
 			isAppInForeground: false,
 			discoveryRunning: ref(false),
 			isDragHovering: ref(false),
+			transferMetrics: {} as Record<string, {
+				startedAt: number,
+				lastAck: number,
+				lastTs: number,
+				speedBps: number,
+				totalBytes?: number,
+			}>,
 
 			requests: ref<ChannelMessage[]>([]),
 			endpointsInfo: ref<EndpointInfo[]>([]),
@@ -258,6 +268,7 @@ export default {
 			this.unlisten.push(
 				await listen('rs2js_channelmessage', async (event) => {
 					const cm = event.payload as ChannelMessage;
+					this.updateTransferMetrics(cm);
 					const idx = this.requests.findIndex((el) => el.id === cm.id);
 
 					if (cm.state === "Disconnected") {
@@ -357,6 +368,92 @@ export default {
 	},
 
 	methods: {
+		updateTransferMetrics: function(cm: ChannelMessage) {
+			const transferStates = ['SentIntroduction', 'SendingFiles', 'ReceivingFiles'];
+			const state = cm.state ?? 'Initial';
+
+			if (!transferStates.includes(state)) {
+				delete this.transferMetrics[cm.id];
+				return;
+			}
+
+			const ackBytes = Number(cm.meta?.ack_bytes ?? 0);
+			const totalBytes = Number(cm.meta?.total_bytes ?? 0);
+			const now = Date.now();
+			const current = this.transferMetrics[cm.id];
+
+			if (!current) {
+				this.transferMetrics[cm.id] = {
+					startedAt: now,
+					lastAck: ackBytes,
+					lastTs: now,
+					speedBps: 0,
+					totalBytes: totalBytes > 0 ? totalBytes : undefined,
+				};
+				return;
+			}
+
+			if (totalBytes > 0) {
+				current.totalBytes = totalBytes;
+			}
+
+			const dtSeconds = (now - current.lastTs) / 1000;
+			const deltaBytes = Math.max(0, ackBytes - current.lastAck);
+
+			if (dtSeconds > 0.15 && deltaBytes > 0) {
+				const instantSpeed = deltaBytes / dtSeconds;
+				current.speedBps = current.speedBps === 0
+					? instantSpeed
+					: (current.speedBps * 0.6) + (instantSpeed * 0.4);
+			}
+
+			current.lastAck = ackBytes;
+			current.lastTs = now;
+		},
+		formatBytesPerSec: function(bytesPerSec: number) {
+			if (!Number.isFinite(bytesPerSec) || bytesPerSec <= 0) return '0 B/s';
+			const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+			let value = bytesPerSec;
+			let unitIndex = 0;
+			while (value >= 1024 && unitIndex < units.length - 1) {
+				value /= 1024;
+				unitIndex++;
+			}
+			return `${value >= 10 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
+		},
+		formatEta: function(seconds: number) {
+			if (!Number.isFinite(seconds) || seconds < 0) return '—';
+			const rounded = Math.ceil(seconds);
+			const hours = Math.floor(rounded / 3600);
+			const minutes = Math.floor((rounded % 3600) / 60);
+			const secs = rounded % 60;
+
+			if (hours > 0) {
+				return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+			}
+
+			return `${minutes}:${String(secs).padStart(2, '0')}`;
+		},
+		formatTransferMetrics: function(id: string, item: DisplayedItem) {
+			const metric = this.transferMetrics[id];
+			if (!metric) return null;
+
+			const speedBps = metric.speedBps;
+			const totalBytes = item.total_bytes ?? metric.totalBytes;
+			const ackBytes = item.ack_bytes ?? metric.lastAck;
+
+			if (!speedBps || speedBps <= 0) {
+				return 'Speed: calculating... · ETA: —';
+			}
+
+			if (!totalBytes || totalBytes <= ackBytes) {
+				return `Speed: ${this.formatBytesPerSec(speedBps)} · ETA: —`;
+			}
+
+			const remaining = Math.max(0, totalBytes - ackBytes);
+			const etaSeconds = remaining / speedBps;
+			return `Speed: ${this.formatBytesPerSec(speedBps)} · ETA: ${this.formatEta(etaSeconds)}`;
+		},
 		writeToClipboard: async function(text: string) {
 			try {
 				await writeText(text);
