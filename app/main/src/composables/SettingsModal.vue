@@ -29,7 +29,7 @@ function openDownloadPicker() {
 
 <template>
 	<div v-if="vm.settingsOpen" class="absolute z-10 w-full h-full flex justify-center items-center bg-black bg-opacity-25">
-		<div class="bg-white rounded-xl shadow-xl p-4 w-[24rem]">
+		<div class="bg-white dark:bg-zinc-800 rounded-xl shadow-xl p-4 w-[24rem]">
 			<div class="flex flex-row justify-between items-center">
 				<h3 class="font-medium text-xl">
 					Settings
@@ -39,6 +39,12 @@ function openDownloadPicker() {
 				</div>
 			</div>
 			<div class="py-4 flex flex-col">
+				<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
+					<label class="cursor-pointer flex flex-row justify-between items-center" @click="utils.setDarkMode(vm, !vm.darkmode)">
+						<span class="label-text">Dark mode</span>
+						<input type="checkbox" :checked="vm.darkmode" class="checkbox focus:outline-none">
+					</label>
+				</div>
 				<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
 					<label class="cursor-pointer flex flex-row justify-between items-center" @click="utils.setAutoStart(vm, !vm.autostart)">
 						<span class="label-text">Start on boot</span>

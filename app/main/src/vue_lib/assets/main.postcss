@@ -108,6 +108,18 @@ body,
 	@apply bg-black bg-opacity-40
 }
 
+.dark .status-indicator--success .circle-main {
+    @apply bg-green-300
+}
+
+.dark .status-indicator--success .circle-secondary {
+    @apply bg-green-300 bg-opacity-20
+}
+
+.dark .status-indicator--success .circle-tertiary {
+    @apply bg-green-300 bg-opacity-40
+}
+
 @keyframes pulsate-tertiary {
     45% {
         transform: scale(1, 1)
@@ -156,7 +168,7 @@ body,
 }
 
 .btn {
-	@apply h-12 min-h-12 cursor-pointer rounded-xl font-medium px-4 inline-flex justify-center items-center gap-2 hover:bg-gray-500 hover:bg-opacity-10
+    @apply h-12 min-h-12 cursor-pointer rounded-xl font-medium px-4 inline-flex justify-center items-center gap-2 hover:bg-gray-500 hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10
 }
 
 .checkbox {
@@ -173,6 +185,7 @@ body,
     border-width: 1px;
     border-color: var(--fallback-bc, oklch(var(--bc) / var(--tw-border-opacity)));
     --tw-border-opacity: .2;
+	@apply dark:border-zinc-500;
 }
 
 .checkbox:checked, .checkbox[checked=true], .checkbox[aria-checked=true] {
@@ -208,6 +221,10 @@ body,
   	stroke: #ddd;
 }
 
+.dark .circular-progress circle.bg {
+    stroke: #3f3f46;
+}
+
 .circular-progress circle.fg {
 	transform: rotate(-90deg);
 	transform-origin: var(--half-size) var(--half-size);
@@ -215,6 +232,10 @@ body,
 	transition: stroke-dasharray 0.3s linear 0s;
 
 	@apply stroke-black
+}
+
+.dark .circular-progress circle.fg {
+    @apply stroke-zinc-100
 }
 
 .error circle.bg, .error circle.fg {

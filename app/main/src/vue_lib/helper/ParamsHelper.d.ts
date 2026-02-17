@@ -22,6 +22,7 @@ export interface TauriVM {
     autostart: boolean;
     realclose: boolean;
     startminimized: boolean;
+    darkmode: boolean;
     visibility: Visibility;
     downloadPath: string | undefined;
     hostname: string | undefined;
@@ -31,6 +32,9 @@ export interface TauriVM {
     disable: () => Promise<void>;
     invoke: (cmd: string, args?: InvokeArgs) => Promise<unknown>
     setVisibility: (vm: TauriVM, visibility: Visibility) => Promise<void>;
+    setDarkMode: (vm: TauriVM, darkmode: boolean) => Promise<void>;
+    getDarkMode: (vm: TauriVM) => Promise<void>;
+    applyTheme: (darkmode: boolean) => void;
 
     displayedIsEmpty: boolean;
     displayedItems: DisplayedItem[];
