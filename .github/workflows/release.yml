@@ -26,10 +26,6 @@ jobs:
             name: main
             target_path: app/main
             cache_directory: app/main/src-tauri/target
-          - os: macos-13
-            name: main
-            target_path: app/main
-            cache_directory: app/main/src-tauri/target
           - os: windows-latest
             name: main
             target_path: app/main
