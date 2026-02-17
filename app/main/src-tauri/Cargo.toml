@@ -1,7 +1,7 @@
 [package]
-name = "rquickshare"
+name = "rquickshare-x"
 version = "0.11.5"
-default-run = "rquickshare"
+default-run = "rquickshare-x"
 edition = "2021"
 authors = ["martichou"]
 repository = "https://github.com/Martichou/rquickshare"

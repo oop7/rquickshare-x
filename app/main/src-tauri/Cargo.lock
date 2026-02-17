@@ -4239,7 +4239,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rquickshare"
+name = "rquickshare-x"
 version = "0.11.5"
 dependencies = [
  "anyhow",

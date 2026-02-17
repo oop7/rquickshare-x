@@ -24,13 +24,13 @@ pub fn send_request_notification(name: String, id: String, app_handle: &AppHandl
     let _ = app_handle
         .notification()
         .builder()
-        .title("RQuickShare")
+        .title("RQuickShare-X")
         .body(&body)
         .show();
 
     #[cfg(target_os = "linux")]
     match Notification::new()
-        .summary("RQuickShare")
+        .summary("RQuickShare-X")
         .body(&body)
         .action("accept", "Accept")
         .action("reject", "Reject")
@@ -75,19 +75,19 @@ pub fn send_request_notification(name: String, id: String, app_handle: &AppHandl
 }
 
 pub fn send_temporarily_notification(app_handle: &AppHandle) {
-    let body = "RQuickShare is temporarily hidden".to_string();
+    let body = "RQuickShare-X is temporarily hidden".to_string();
 
     #[cfg(not(target_os = "linux"))]
     let _ = app_handle
         .notification()
         .builder()
-        .title("RQuickShare")
+        .title("RQuickShare-X")
         .body(&body)
         .show();
 
     #[cfg(target_os = "linux")]
     match Notification::new()
-        .summary("RQuickShare")
+        .summary("RQuickShare-X")
         .body(&body)
         .action("visible", "Be visible (1m)")
         .action("ignore", "Ignore")

@@ -29,7 +29,7 @@
 		{
 			"type": "toml",
 			"path": "app/main/src-tauri/Cargo.lock",
-			"jsonpath": "$.package[?(@.name.value == 'rquickshare')].version"
+			"jsonpath": "$.package[?(@.name.value == 'rquickshare-x')].version"
 		},
 		{
 			"type": "yaml",

@@ -39,12 +39,12 @@
     "beforeDevCommand": "pnpm vite:dev",
     "devUrl": "http://localhost:1420"
   },
-  "productName": "rquickshare",
-  "identifier": "dev.mandre.rquickshare",
+  "productName": "rquickshare-x",
+  "identifier": "dev.mandre.rquicksharex",
   "app": {
     "windows": [
       {
-        "title": "RQuickShare",
+        "title": "RQuickShare-X",
         "width": 900,
         "height": 600,
         "resizable": true,
