@@ -2,12 +2,12 @@
   <h1>rquickshare-x</h1>
 
   <p>
-    <strong>NearbyShare/QuickShare for Linux, macOS and Windows</strong>
+    <strong>Open-source NearbyShare/Quick Share implementation for Linux, macOS and Windows</strong>
   </p>
   <p>
 
-[![CI](https://github.com/oop7/rquickshare/actions/workflows/build.yml/badge.svg)](https://github.com/oop7/rquickshare/actions)
-[![CI](https://github.com/oop7/rquickshare/actions/workflows/lint.yml/badge.svg)](https://github.com/oop7/rquickshare/actions)
+[![CI](https://github.com/oop7/rquickshare-x/actions/workflows/build.yml/badge.svg)](https://github.com/oop7/rquickshare-x/actions)
+[![CI](https://github.com/oop7/rquickshare-x/actions/workflows/lint.yml/badge.svg)](https://github.com/oop7/rquickshare-x/actions)
 
   </p>
 </div>
@@ -17,13 +17,24 @@
 Installation
 --------------------------
 
+`rquickshare-x` is a fork of the original `rquickshare` project.
+
+This fork currently adds:
+
+- Windows support (builds + installers)
+- Dark mode
+- Live transfer speed meter
+- ETA during transfers
+
+The goal is to provide a practical open-source NearbyShare-compatible desktop app while continuing to improve usability and cross-platform support.
+
 You simply have to download the latest release.
 
 **Important notes:**
 - The minimum GLIBC version supported is included in the pkg name.
   - You can check yours with `ldd --version`.
-- RQuickShare was distributed with two version (main & legacy) up until v0.11.5:
-  - Legacy is for compatibility with older Ubuntu versions: [here](https://github.com/oop7/rquickshare/releases/tag/v0.11.5).
+- RQuickShare was distributed with two versions (main & legacy) up until v0.11.5:
+  - Legacy is for compatibility with older Ubuntu versions: [here](https://github.com/oop7/rquickshare-x/releases/tag/v0.11.5).
   - Main is for future support of newer versions of Ubuntu.
 
 #### macOS
@@ -49,22 +60,22 @@ The files should (in theory) install those dependencies by themselves, but if th
 
 ##### Install rquickshare
 ```bash
-sudo dpkg -i r-quick-share_${VERSION}.deb
+sudo dpkg -i rquickshare-x_${VERSION}.deb
 ```
 
 #### Debian
 ```bash
-sudo dpkg -i r-quick-share_${VERSION}.deb
+sudo dpkg -i rquickshare-x_${VERSION}.deb
 ```
 
 #### RPM
 ```bash
-sudo rpm -i r-quick-share-${VERSION}.rpm
+sudo rpm -i rquickshare-x-${VERSION}.rpm
 ```
 
 #### DNF (preferred over RPM)
 ```bash
-sudo dnf install r-quick-share-${VERSION}.rpm
+sudo dnf install rquickshare-x-${VERSION}.rpm
 ```
 
 #### AppImage (no root required)
@@ -72,13 +83,13 @@ sudo dnf install r-quick-share-${VERSION}.rpm
 AppImage is a little different. There's no installation needed, you simply have to give it the executable permission (+x on a chmod) to run it.
 
 ```bash
-chmod +x r-quick-share_${VERSION}.AppImage
+chmod +x rquickshare-x_${VERSION}.AppImage
 ```
 
 You can then either double click on it, or run it from the cmd line:
 
 ```bash
-./r-quick-share_${VERSION}.AppImage
+./rquickshare-x_${VERSION}.AppImage
 ```
 
 ---
@@ -91,17 +102,17 @@ You can then either double click on it, or run it from the cmd line:
 For Arch Linux, you can install it from the AUR by using an AUR helper like yay:
 
 ```bash
-yay -S r-quick-share
+yay -S rquickshare-x
 ```
 
 ### Nix
 
-Available here: [NixOS](https://search.nixos.org/packages?channel=24.05&show=rquickshare&from=0&size=50&sort=relevance&type=packages&query=rquickshare)
+Available here: [NixOS](https://search.nixos.org/packages?channel=24.05&show=rquickshare-x&from=0&size=50&sort=relevance&type=packages&query=rquickshare-x)
 
 A nix-shell will temporarily modify your $PATH environment variable. This can be used to try a piece of software before deciding to permanently install it.
 
 ```bash
-$ nix-shell -p rquickshare
+$ nix-shell -p rquickshare-x
 ```
 </details>
 
@@ -150,7 +161,7 @@ Android will see that your laptop/desktop is trying to share a file and will rev
 Make sure the app is really closed by running:
 
 ```bash
-ps aux | grep r-quick-share
+ps aux | grep rquickshare-x
 ```
 
 If you see that the process is still running, it's because the app is not closed. This may be an intended behavior: when closing the window, the app won't stop and instead is still running and accessible via the system tray icon. However, if your distribution doesn't support/hasn't enabled this, it may be an issue for you.
@@ -163,10 +174,13 @@ In this case, you may want to configure a static port to allow it in your firewa
 
 ```bash
 # linux
-vim ./.local/share/dev.mandre.rquickshare/.settings.json
+vim ./.local/share/dev.mandre.rquicksharex/.settings.json
 
 # mac
-vim Library/Application\ Support/dev.mandre.rquickshare/.settings.json
+vim Library/Application\ Support/dev.mandre.rquicksharex/.settings.json
+
+# windows (PowerShell)
+notepad "$env:APPDATA\dev.mandre.rquicksharex\.settings.json"
 
 # to be sure
 find $HOME -name ".settings.json"
@@ -189,10 +203,10 @@ By default the port is random (the OS will decide).
 
 This happens for some users running Linux + NVIDIA cards.
 
-The workaround is to start RQuickShare with an env variable defined as follows:
+The workaround is to start RQuickShare-x with an env variable defined as follows:
 
 ```bash
-env WEBKIT_DISABLE_COMPOSITING_MODE=1 rquickshare
+env WEBKIT_DISABLE_COMPOSITING_MODE=1 rquickshare-x
 ```
 
 Alternatively, you may try the `legacy` variant.
@@ -200,7 +214,16 @@ Alternatively, you may try the `legacy` variant.
 WIP Notes
 --------------------------
 
-`rquickshare` is still in development (WIP). Support currently targets Linux, macOS and Windows. Keep in mind that the design may change between versions, so flexibility is key.
+`rquickshare-x` is still in development (WIP). Support currently targets Linux, macOS and Windows. Keep in mind that the design may change between versions, so flexibility is key.
+
+Fork differences from upstream
+--------------------------
+
+- Added Windows support (build + installers)
+- Added dark mode
+- Added live speed meter during file transfer
+- Added ETA while transferring files
+- Added fork-specific release/CI workflow updates
 
 Got feedback or suggestions? We'd love to hear them! Feel free to open an issue and share your thoughts.
 
@@ -211,6 +234,7 @@ This project wouldn't exist without those amazing open-source project:
 
 - https://github.com/grishka/NearDrop
 - https://github.com/vicr123/QNearbyShare
+- https://github.com/Martichou/rquickshare
 
 
 Contributing
