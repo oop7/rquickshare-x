@@ -6,6 +6,9 @@
 ### Features
 
 * add Windows support for core and Tauri backend builds
+* add dark mode toggle with persisted preference
+* add live transfer speed meter and ETA in transfer UI
+* rename app identity to `rquickshare-x` (package, product/window name, notifications, tray)
 * publish Windows release artifacts (`.msi` and `.exe`) in release workflow
 
 
@@ -13,12 +16,18 @@
 
 * replace unix-only hostname/paths in Rust code with cross-platform implementations
 * fix cross-platform file transfer I/O and metadata handling for Windows
+* fix GitHub release upload glob patterns to match generated bundle files
+* fix CI/release runner matrix issues by removing unsupported/duplicate macOS entries
+* fix Tauri package mismatch in CI by pinning JS Tauri packages to Rust-compatible `2.2.x`
+* fix Windows MSI bundling prerelease constraint by using numeric prerelease version (`0.11.6-1`)
 
 
 ### Miscellaneous Chores
 
 * add Windows CI checks for `core_lib` and `app/main/src-tauri`
-* update docs to list Windows as a supported platform
+* update release workflow to create draft releases for tag push and manual dispatch
+* update CI workflows to use pnpm 9 for lockfile compatibility
+* update docs to list Windows and fork-specific features
 
 ## [0.11.5](https://github.com/Martichou/rquickshare/compare/v0.11.4...v0.11.5) (2025-02-23)
 
