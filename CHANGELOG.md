@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## 0.11.6-b (2026-02-19)
 
 
 ### Features
