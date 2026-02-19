@@ -1,13 +1,13 @@
 <div align="center">
-  <h1>rquickshare</h1>
+  <h1>rquickshare-x</h1>
 
   <p>
     <strong>NearbyShare/QuickShare for Linux, macOS and Windows</strong>
   </p>
   <p>
 
-[![CI](https://github.com/Martichou/rquickshare/actions/workflows/build.yml/badge.svg)](https://github.com/Martichou/rquickshare/actions)
-[![CI](https://github.com/Martichou/rquickshare/actions/workflows/lint.yml/badge.svg)](https://github.com/Martichou/rquickshare/actions)
+[![CI](https://github.com/oop7/rquickshare/actions/workflows/build.yml/badge.svg)](https://github.com/oop7/rquickshare/actions)
+[![CI](https://github.com/oop7/rquickshare/actions/workflows/lint.yml/badge.svg)](https://github.com/oop7/rquickshare/actions)
 
   </p>
 </div>
@@ -23,7 +23,7 @@ You simply have to download the latest release.
 - The minimum GLIBC version supported is included in the pkg name.
   - You can check yours with `ldd --version`.
 - RQuickShare was distributed with two version (main & legacy) up until v0.11.5:
-  - Legacy is for compatibility with older Ubuntu versions: [here](https://github.com/Martichou/rquickshare/releases/tag/v0.11.5).
+  - Legacy is for compatibility with older Ubuntu versions: [here](https://github.com/oop7/rquickshare/releases/tag/v0.11.5).
   - Main is for future support of newer versions of Ubuntu.
 
 #### macOS
