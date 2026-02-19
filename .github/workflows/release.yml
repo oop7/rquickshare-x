@@ -87,8 +87,12 @@ jobs:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
           draft: true
           files: |
+            ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/**/*.AppImage
+            ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/**/*.deb
+            ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/**/*.rpm
+            ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/**/*.dmg
             ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/*/rquickshare-x-${{ matrix.name }}*
-          fail_on_unmatched_files: true
+          fail_on_unmatched_files: false
 
       - name: Add files to release (Windows)
         if: matrix.os == 'windows-latest'
@@ -99,4 +103,4 @@ jobs:
           files: |
             ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/msi/*.msi
             ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/nsis/*.exe
-          fail_on_unmatched_files: true
+          fail_on_unmatched_files: false
