@@ -1,11 +1,7 @@
 name: Release please flow
 
 on:
-  push:
-    branches:
-      - master
-    tags-ignore:
-      - '**'
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always

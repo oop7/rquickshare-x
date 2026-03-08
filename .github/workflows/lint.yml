@@ -1,9 +1,10 @@
 name: Code quality - linting
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ "master" ]
-  pull_request:
+    tags:
+      - '*'
 
 # cancel ongoing jobs:
 concurrency:
