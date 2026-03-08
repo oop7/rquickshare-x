@@ -1,6 +1,6 @@
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 import { TauriVM } from './helper/ParamsHelper';
-import { autostartKey, darkmodeKey, DisplayedItem, downloadPathKey, numberToVisibility, realcloseKey, startminimizedKey, stateToDisplay, visibilityKey, visibilityToNumber } from './types';
+import { autostartKey, DisplayedItem, downloadPathKey, numberToVisibility, realcloseKey, startminimizedKey, stateToDisplay, updateCheckerKey, visibilityKey, visibilityToNumber } from './types';
 import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { ChannelAction } from '@martichou/core_lib';
@@ -96,16 +96,33 @@ function applyTheme(darkmode: boolean) {
 	document.documentElement.classList.toggle('dark', darkmode);
 }
 
-async function setDarkMode(vm: TauriVM, darkmode: boolean) {
-	await vm.store.set(darkmodeKey, darkmode);
-	await vm.store.save();
-	vm.darkmode = darkmode;
-	applyTheme(darkmode);
+function systemThemeMediaQuery() {
+	return window.matchMedia('(prefers-color-scheme: dark)');
 }
 
-async function getDarkMode(vm: TauriVM) {
-	vm.darkmode = await vm.store.get(darkmodeKey) ?? false;
-	applyTheme(vm.darkmode);
+function initSystemTheme(vm: TauriVM) {
+	cleanupSystemTheme(vm);
+
+	const mediaQuery = systemThemeMediaQuery();
+	const onThemeChange = (event: MediaQueryListEvent) => {
+		vm.darkmode = event.matches;
+		applyTheme(event.matches);
+	};
+
+	vm.themeMediaQuery = mediaQuery;
+	vm.themeMediaQueryHandler = onThemeChange;
+	vm.darkmode = mediaQuery.matches;
+	applyTheme(mediaQuery.matches);
+	mediaQuery.addEventListener('change', onThemeChange);
+}
+
+function cleanupSystemTheme(vm: TauriVM) {
+	if (vm.themeMediaQuery && vm.themeMediaQueryHandler) {
+		vm.themeMediaQuery.removeEventListener('change', vm.themeMediaQueryHandler);
+	}
+
+	vm.themeMediaQuery = null;
+	vm.themeMediaQueryHandler = undefined;
 }
 
 async function setVisibility(vm: TauriVM, visibility: Visibility) {
@@ -196,18 +213,63 @@ async function getDownloadPath(vm: TauriVM) {
 	vm.downloadPath = await vm.store.get(downloadPathKey) ?? undefined;
 }
 
+async function setUpdateChecker(vm: TauriVM, enabled: boolean) {
+	await vm.store.set(updateCheckerKey, enabled);
+	await vm.store.save();
+	vm.updateCheckerEnabled = enabled;
+
+	if (!enabled) {
+		vm.new_version = null;
+		return;
+	}
+
+	await getLatestVersion(vm);
+}
+
+async function getUpdateChecker(vm: TauriVM) {
+	vm.updateCheckerEnabled = await vm.store.get(updateCheckerKey) ?? true;
+
+	if (!vm.updateCheckerEnabled) {
+		vm.new_version = null;
+	}
+}
+
+function extractReleaseVersion(release: { tag_name?: string, assets?: Array<{ name?: string }> }) {
+	const assetVersion = release.assets
+		?.map((asset) => asset.name?.match(/rquickshare-x[_-]([0-9A-Za-z.-]+)/)?.[1])
+		.find((version) => version);
+
+	if (assetVersion) {
+		return assetVersion;
+	}
+
+	return release.tag_name?.trim().replace(/^v/i, '') ?? null;
+}
+
 async function getLatestVersion(vm: TauriVM) {
+	if (!vm.updateCheckerEnabled) {
+		vm.new_version = null;
+		return;
+	}
+
 	try {
-		const response = await fetch('https://api.github.com/repos/martichou/rquickshare/releases/latest');
+		const response = await fetch('https://api.github.com/repos/oop7/rquickshare-x/releases/latest');
 		if (!response.ok) {
 			throw new Error(`Error: ${response.status} ${response.statusText}`);
 		}
 		const data = await response.json();
-		const new_version = data.tag_name.substring(1);
+		const new_version = extractReleaseVersion(data);
+
+		if (!new_version) {
+			throw new Error('Unable to determine latest release version');
+		}
+
 		console.log(`Latest version: ${vm.version} vs ${new_version}`);
 
 		if (vm.version && gt(new_version, vm.version)) {
 			vm.new_version = new_version;
+		} else {
+			vm.new_version = null;
 		}
 	} catch (err) {
 		console.error(err);
@@ -233,10 +295,12 @@ export const utils = {
 	setDownloadPath,
 	getDownloadPath,
 	getLatestVersion,
+	setUpdateChecker,
+	getUpdateChecker,
 	setStartMinimized,
 	getStartMinimized,
-	setDarkMode,
-	getDarkMode,
+	initSystemTheme,
+	cleanupSystemTheme,
 	applyTheme
 };
 export type UtilsType = typeof utils;

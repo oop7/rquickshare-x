@@ -23,8 +23,11 @@ export interface TauriVM {
     realclose: boolean;
     startminimized: boolean;
     darkmode: boolean;
+    themeMediaQuery: MediaQueryList | null;
+    themeMediaQueryHandler: ((event: MediaQueryListEvent) => void) | undefined;
     visibility: Visibility;
     downloadPath: string | undefined;
+    updateCheckerEnabled: boolean;
     hostname: string | undefined;
     settingsOpen: boolean;
     new_version: string | null;
@@ -32,8 +35,10 @@ export interface TauriVM {
     disable: () => Promise<void>;
     invoke: (cmd: string, args?: InvokeArgs) => Promise<unknown>
     setVisibility: (vm: TauriVM, visibility: Visibility) => Promise<void>;
-    setDarkMode: (vm: TauriVM, darkmode: boolean) => Promise<void>;
-    getDarkMode: (vm: TauriVM) => Promise<void>;
+    setUpdateChecker: (vm: TauriVM, enabled: boolean) => Promise<void>;
+    getUpdateChecker: (vm: TauriVM) => Promise<void>;
+    initSystemTheme: (vm: TauriVM) => void;
+    cleanupSystemTheme: (vm: TauriVM) => void;
     applyTheme: (darkmode: boolean) => void;
 
     displayedIsEmpty: boolean;

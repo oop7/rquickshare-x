@@ -31,7 +31,7 @@ const emit = defineEmits(['openSettings']);
 			<div
 				class="flex items-center gap-2 text-sm transition duration-150 ease-in-out"
 				:class="{'btn active:scale-95': vm.new_version}"
-				@click="vm.new_version && openUrl('https://github.com/Martichou/rquickshare/releases/latest')">
+				@click="vm.new_version && openUrl('https://github.com/oop7/rquickshare-x/releases/latest')">
 				<span v-if="vm.new_version">Update available</span>
 				<p>
 					v{{ vm.version }}

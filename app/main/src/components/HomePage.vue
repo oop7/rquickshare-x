@@ -152,7 +152,7 @@ import { UnlistenFn, listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
 import { getVersion } from '@tauri-apps/api/app';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { getStore } from "@tauri-apps/plugin-store";
+import { load } from '@tauri-apps/plugin-store';
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { disable, enable } from '@tauri-apps/plugin-autostart';
 import { open as tauriDialog } from '@tauri-apps/plugin-dialog';
@@ -185,7 +185,9 @@ export default {
 	},
 
 	async setup() {
-		const store = (await getStore(".settings.json"))!;
+		const store = await load('.settings.json', {
+			autoSave: 100,
+		});
 		const toastStore = useToastStore();
 
 		const dialogOpen = tauriDialog;
@@ -209,6 +211,8 @@ export default {
 			discoveryRunning: ref(false),
 			isDragHovering: ref(false),
 			darkmode: ref<boolean>(false),
+			themeMediaQuery: null as MediaQueryList | null,
+			themeMediaQueryHandler: undefined as ((event: MediaQueryListEvent) => void) | undefined,
 			transferMetrics: {} as Record<string, {
 				startedAt: number,
 				lastAck: number,
@@ -233,6 +237,7 @@ export default {
 			startminimized: ref<boolean>(false),
 			visibility: ref<Visibility>('Visible'),
 			downloadPath: ref<string | undefined>(),
+			updateCheckerEnabled: ref<boolean>(true),
 
 			hostname: ref<string>(),
 
@@ -244,6 +249,26 @@ export default {
 
 	mounted: function () {
 		nextTick(async () => {
+			const defaultSettings = [
+				['autostart', true],
+				['realclose', false],
+				['startminimized', false],
+				['visibility', 0],
+				['update_checker', true],
+			] as const;
+			let storeUpdated = false;
+
+			for (const [key, value] of defaultSettings) {
+				if (!await this.store.has(key)) {
+					await this.store.set(key, value);
+					storeUpdated = true;
+				}
+			}
+
+			if (storeUpdated) {
+				await this.store.save();
+			}
+
 			this.hostname = await invoke('get_hostname');
 			this.version = await getVersion();
 
@@ -257,8 +282,9 @@ export default {
 
 			await this.getRealclose(this);
 			await this.getStartMinimized(this);
-				await this.getDarkMode(this);
+			this.initSystemTheme(this);
 			await this.getDownloadPath(this);
+			await this.getUpdateChecker(this);
 
 			// Check permission for notification
 			let permissionGranted = await isPermissionGranted();
@@ -345,11 +371,14 @@ export default {
 				})
 			);
 
-			await this.getLatestVersion(this);
+			if (this.updateCheckerEnabled) {
+				await this.getLatestVersion(this);
+			}
 		});
 	},
 
 	unmounted: function() {
+		this.cleanupSystemTheme(this);
 		this.unlisten.forEach((el) => el());
 
 		if (this.cleanupInterval && this.cleanupInterval[Symbol.dispose]) {

@@ -5,7 +5,7 @@ on:
     inputs:
       tag_name:
         description: 'Tag Name'
-        required: true
+        required: false
   push:
     tags:
       - '*'
@@ -38,6 +38,38 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Resolve release tag
+        id: release_tag
+        shell: pwsh
+        run: |
+          $cargoTomlPath = Join-Path "${{ github.workspace }}" "${{ matrix.target_path }}/src-tauri/Cargo.toml"
+          $cargoToml = Get-Content $cargoTomlPath -Raw
+
+          if ($cargoToml -notmatch '(?m)^version\s*=\s*"([^"]+)"') {
+            throw "Unable to resolve app version from $cargoTomlPath"
+          }
+
+          $binaryVersion = $matches[1]
+          $expectedTag = "v$binaryVersion"
+          $requestedTag = if ("${{ github.event_name }}" -eq 'workflow_dispatch' -and "${{ github.event.inputs.tag_name }}") {
+            "${{ github.event.inputs.tag_name }}"
+          } else {
+            "${{ github.ref_name }}"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($requestedTag)) {
+            $requestedTag = $expectedTag
+          }
+
+          if (-not $requestedTag.StartsWith('v')) {
+            $requestedTag = "v$requestedTag"
+          }
+
+          if ($requestedTag -ne $expectedTag) {
+            throw "Release tag '$requestedTag' does not match binary version '$binaryVersion'. Expected '$expectedTag'."
+          }
+
+          "tag=$requestedTag" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -84,7 +116,7 @@ jobs:
         if: matrix.os != 'windows-latest'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
+          tag_name: ${{ steps.release_tag.outputs.tag }}
           draft: true
           files: |
             ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/**/*.AppImage
@@ -98,7 +130,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.ref_name }}
+          tag_name: ${{ steps.release_tag.outputs.tag }}
           draft: true
           files: |
             ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/msi/*.msi
