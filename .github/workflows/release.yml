@@ -112,8 +112,8 @@ jobs:
           pnpm install
           pnpm build
 
-      - name: Add files to release (Linux/macOS)
-        if: matrix.os != 'windows-latest'
+      - name: Add files to release (Linux)
+        if: matrix.os == 'ubuntu-24.04'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.release_tag.outputs.tag }}
@@ -122,8 +122,16 @@ jobs:
             ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/**/*.AppImage
             ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/**/*.deb
             ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/**/*.rpm
+          fail_on_unmatched_files: false
+
+      - name: Add files to release (macOS)
+        if: matrix.os == 'macos-latest'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_tag.outputs.tag }}
+          draft: true
+          files: |
             ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/**/*.dmg
-            ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/*/rquickshare-x-${{ matrix.name }}*
           fail_on_unmatched_files: false
 
       - name: Add files to release (Windows)
