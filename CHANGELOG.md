@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.11.7 (2026-03-12)
+
+
+### Features
+
+* follow the OS-native light/dark preference automatically for app theme ([#2](https://github.com/oop7/rquickshare-x/issues/2))
+* add an update checker setting for GitHub release notifications
+
+
+### Bug Fixes
+
+* persist `darkmode` and `realclose` correctly across launches by loading the settings store properly ([#1](https://github.com/oop7/rquickshare-x/issues/1))
+* require release tags to match the full binary version and normalize package versions to `0.11.7` for packaging consistency ([#4](https://github.com/oop7/rquickshare-x/issues/4))
+* split release asset uploads per OS and avoid release job failures when some bundle types are not produced
+
+
+### Miscellaneous Chores
+
+* allow build, lint, and release workflows to run manually or from tags without running on normal branch pushes
+
 ## 0.11.6-b (2026-02-19)
 
 
