@@ -2,6 +2,7 @@
 import { utils } from '../vue_lib';
 import { PropType } from 'vue';
 import { TauriVM } from '../vue_lib/helper/ParamsHelper';
+import { ThemeMode } from '../vue_lib/types';
 
 const props = defineProps({
 	vm: {
@@ -25,6 +26,11 @@ function openDownloadPicker() {
 		await utils.setDownloadPath(props.vm, el as string);
 	});
 }
+
+function onThemeModeChange(event: Event) {
+	const mode = (event.target as HTMLSelectElement).value as ThemeMode;
+	utils.setThemeMode(props.vm, mode);
+}
 </script>
 
 <template>
@@ -40,9 +46,13 @@ function openDownloadPicker() {
 			</div>
 			<div class="py-4 flex flex-col">
 				<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
-					<label class="cursor-pointer flex flex-row justify-between items-center" @click="utils.setDarkMode(vm, !vm.darkmode)">
-						<span class="label-text">Dark mode</span>
-						<input type="checkbox" :checked="vm.darkmode" class="checkbox focus:outline-none">
+					<label class="flex flex-row justify-between items-center">
+						<span class="label-text">Theme</span>
+						<select class="select select-sm w-36 focus:outline-none" :value="vm.themeMode" @change="onThemeModeChange">
+							<option value="system">System</option>
+							<option value="light">Light</option>
+							<option value="dark">Dark</option>
+						</select>
 					</label>
 				</div>
 				<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">

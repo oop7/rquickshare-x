@@ -212,6 +212,7 @@ export default {
 			discoveryRunning: ref(false),
 			isDragHovering: ref(false),
 			darkmode: ref<boolean>(false),
+			themeMode: ref<'system' | 'light' | 'dark'>('system'),
 			themeMediaQuery: null as MediaQueryList | null,
 			themeMediaQueryHandler: undefined as ((event: MediaQueryListEvent) => void) | undefined,
 			transferMetrics: {} as Record<string, {
@@ -254,6 +255,7 @@ export default {
 				['autostart', true],
 				['realclose', false],
 				['startminimized', false],
+				['theme_mode', 'system'],
 				['visibility', 0],
 				['update_checker', true],
 			] as const;
@@ -283,7 +285,7 @@ export default {
 
 			await this.getRealclose(this);
 			await this.getStartMinimized(this);
-			await this.getDarkMode(this);
+			await this.getThemeMode(this);
 			await this.getDownloadPath(this);
 			await this.getUpdateChecker(this);
 

@@ -1,6 +1,6 @@
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 import { TauriVM } from './helper/ParamsHelper';
-import { autostartKey, darkmodeKey, DisplayedItem, downloadPathKey, numberToVisibility, realcloseKey, startminimizedKey, stateToDisplay, updateCheckerKey, visibilityKey, visibilityToNumber } from './types';
+import { autostartKey, darkmodeKey, DisplayedItem, downloadPathKey, numberToVisibility, realcloseKey, startminimizedKey, stateToDisplay, ThemeMode, themeModeKey, updateCheckerKey, visibilityKey, visibilityToNumber } from './types';
 import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { ChannelAction } from '@martichou/core_lib';
@@ -92,24 +92,43 @@ async function getStartMinimized(vm: TauriVM) {
 	vm.startminimized = await vm.store.get(startminimizedKey) ?? false;
 }
 
-async function setDarkMode(vm: TauriVM, darkmode: boolean) {
-	await vm.store.set(darkmodeKey, darkmode);
-	await vm.store.save();
-	vm.darkmode = darkmode;
-	applyTheme(darkmode);
+function isThemeMode(value: unknown): value is ThemeMode {
+	return value === 'system' || value === 'light' || value === 'dark';
 }
 
-async function getDarkMode(vm: TauriVM) {
-	const darkmode = await vm.store.get(darkmodeKey);
+async function setThemeMode(vm: TauriVM, mode: ThemeMode) {
+	cleanupSystemTheme(vm);
+	vm.themeMode = mode;
 
-	if (typeof darkmode === 'boolean') {
+	if (mode === 'system') {
+		initSystemTheme(vm);
+	} else {
+		const darkmode = mode === 'dark';
 		vm.darkmode = darkmode;
 		applyTheme(darkmode);
+	}
+
+	await vm.store.set(themeModeKey, mode);
+	await vm.store.delete(darkmodeKey);
+	await vm.store.save();
+}
+
+async function getThemeMode(vm: TauriVM) {
+	const storedThemeMode = await vm.store.get(themeModeKey);
+
+	if (isThemeMode(storedThemeMode)) {
+		await setThemeMode(vm, storedThemeMode);
 		return;
 	}
 
-	vm.darkmode = systemThemeMediaQuery().matches;
-	applyTheme(vm.darkmode);
+	const legacyDarkMode = await vm.store.get(darkmodeKey);
+
+	if (typeof legacyDarkMode === 'boolean') {
+		await setThemeMode(vm, legacyDarkMode ? 'dark' : 'light');
+		return;
+	}
+
+	await setThemeMode(vm, 'system');
 }
 
 function applyTheme(darkmode: boolean) {
@@ -319,8 +338,8 @@ export const utils = {
 	getUpdateChecker,
 	setStartMinimized,
 	getStartMinimized,
-	setDarkMode,
-	getDarkMode,
+	setThemeMode,
+	getThemeMode,
 	initSystemTheme,
 	cleanupSystemTheme,
 	applyTheme
