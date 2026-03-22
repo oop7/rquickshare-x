@@ -283,7 +283,7 @@ export default {
 
 			await this.getRealclose(this);
 			await this.getStartMinimized(this);
-			this.initSystemTheme(this);
+			await this.getDarkMode(this);
 			await this.getDownloadPath(this);
 			await this.getUpdateChecker(this);
 

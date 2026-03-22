@@ -40,9 +40,9 @@ function openDownloadPicker() {
 			</div>
 			<div class="py-4 flex flex-col">
 				<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
-					<label class="flex flex-row justify-between items-center">
-						<span class="label-text">Theme</span>
-						<span class="text-sm opacity-70">Follows system</span>
+					<label class="cursor-pointer flex flex-row justify-between items-center" @click="utils.setDarkMode(vm, !vm.darkmode)">
+						<span class="label-text">Dark mode</span>
+						<input type="checkbox" :checked="vm.darkmode" class="checkbox focus:outline-none">
 					</label>
 				</div>
 				<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">

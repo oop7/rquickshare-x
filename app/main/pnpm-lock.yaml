@@ -29,9 +29,6 @@ importers:
       '@tauri-apps/plugin-shell':
         specifier: ~2.2.0
         version: 2.2.2
-      '@tauri-apps/plugin-store':
-        specifier: ~2.2.0
-        version: 2.2.1
       pinia:
         specifier: ^2.2.6
         version: 2.2.6(typescript@5.6.3)(vue@3.5.12(typescript@5.6.3))
@@ -57,6 +54,9 @@ importers:
       '@tauri-apps/cli':
         specifier: ~2.2.0
         version: 2.2.7
+      '@tauri-apps/plugin-store':
+        specifier: ~2.2.1
+        version: 2.2.1
       '@types/node':
         specifier: ^20.16.5
         version: 20.16.5

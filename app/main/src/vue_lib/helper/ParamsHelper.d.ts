@@ -37,6 +37,8 @@ export interface TauriVM {
     setVisibility: (vm: TauriVM, visibility: Visibility) => Promise<void>;
     setUpdateChecker: (vm: TauriVM, enabled: boolean) => Promise<void>;
     getUpdateChecker: (vm: TauriVM) => Promise<void>;
+    setDarkMode: (vm: TauriVM, darkmode: boolean) => Promise<void>;
+    getDarkMode: (vm: TauriVM) => Promise<void>;
     initSystemTheme: (vm: TauriVM) => void;
     cleanupSystemTheme: (vm: TauriVM) => void;
     applyTheme: (darkmode: boolean) => void;
