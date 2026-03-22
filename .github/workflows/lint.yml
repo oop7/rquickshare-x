@@ -42,6 +42,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+          version: "25.3"
       - uses: pnpm/action-setup@v4
         with:
           version: 9
@@ -75,6 +76,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+          version: "25.3"
 
       - name: Install Linux dependencies for U
         run: |

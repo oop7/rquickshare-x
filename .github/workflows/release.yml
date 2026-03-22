@@ -74,9 +74,15 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           cache-directories: "${{ github.workspace }}/${{ matrix.cache_directory }}"
+      - name: Install protoc (macOS)
+        if: startsWith(matrix.os, 'macos')
+        run: brew install protobuf
+
       - uses: arduino/setup-protoc@v3
+        if: startsWith(matrix.os, 'macos') == false
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+          version: "25.3"
 
       - name: Install Linux dependencies for U
         if: startsWith(matrix.os, 'ubuntu')
