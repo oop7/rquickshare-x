@@ -188,6 +188,7 @@ export default {
 		const store = await load('.settings.json', {
 			autoSave: 100,
 		});
+		await store.reload();
 		const toastStore = useToastStore();
 
 		const dialogOpen = tauriDialog;

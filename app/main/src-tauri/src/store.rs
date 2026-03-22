@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::Arc, time::Duration};
+use std::{path::PathBuf, sync::Arc};
 
 use rqs_lib::Visibility;
 use tauri::{AppHandle, Emitter, Wry};
@@ -6,9 +6,7 @@ use tauri_plugin_store::{Store, StoreExt};
 
 fn _get_store(app_handle: &AppHandle) -> Arc<Store<Wry>> {
     app_handle
-        .store_builder(".settings.json")
-        .auto_save(Duration::from_millis(100))
-        .build()
+    .store(".settings.json")
         .unwrap()
 }
 
