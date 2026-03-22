@@ -13,19 +13,19 @@ fn _get_store(app_handle: &AppHandle) -> Arc<Store<Wry>> {
 pub fn init_default(app_handle: &AppHandle) {
     let store = _get_store(app_handle);
 
-    if !store.has("autostart") {
+    if store.get("autostart").is_none() {
         store.set("autostart", true);
     }
 
-    if !store.has("realclose") {
+    if store.get("realclose").is_none() {
         store.set("realclose", false);
     }
 
-    if !store.has("visibility") {
+    if store.get("visibility").is_none() {
         store.set("visibility", Visibility::Visible as u8);
     }
 
-    if !store.has("startminimized") {
+    if store.get("startminimized").is_none() {
         store.set("startminimized", false);
     }
 }

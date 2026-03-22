@@ -262,7 +262,7 @@ export default {
 			let storeUpdated = false;
 
 			for (const [key, value] of defaultSettings) {
-				if (!await this.store.has(key)) {
+				if (await this.store.get(key) === null) {
 					await this.store.set(key, value);
 					storeUpdated = true;
 				}
@@ -277,7 +277,7 @@ export default {
 
 			await this.getVisibility(this);
 
-			if (!await this.store.has(autostartKey)) {
+			if (await this.store.get(autostartKey) === null) {
 				await this.setAutoStart(this, true);
 			} else {
 				await this.applyAutoStart(this);

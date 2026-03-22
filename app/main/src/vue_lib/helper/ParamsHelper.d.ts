@@ -41,7 +41,7 @@ export interface TauriVM {
     getUpdateChecker: (vm: TauriVM) => Promise<void>;
     setThemeMode: (vm: TauriVM, mode: ThemeMode) => Promise<void>;
     getThemeMode: (vm: TauriVM) => Promise<void>;
-    initSystemTheme: (vm: TauriVM) => void;
+    initSystemTheme: (vm: TauriVM) => Promise<void>;
     cleanupSystemTheme: (vm: TauriVM) => void;
     applyTheme: (darkmode: boolean) => void;
 

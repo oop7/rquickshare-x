@@ -5,6 +5,7 @@ import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { ChannelAction } from '@martichou/core_lib';
 import { gt } from 'semver';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 function _displayedItems(vm: TauriVM): Array<DisplayedItem> {
 	const ndisplayed = new Array<DisplayedItem>();
@@ -101,7 +102,7 @@ async function setThemeMode(vm: TauriVM, mode: ThemeMode) {
 	vm.themeMode = mode;
 
 	if (mode === 'system') {
-		initSystemTheme(vm);
+		await initSystemTheme(vm);
 	} else {
 		const darkmode = mode === 'dark';
 		vm.darkmode = darkmode;
@@ -139,7 +140,7 @@ function systemThemeMediaQuery() {
 	return window.matchMedia('(prefers-color-scheme: dark)');
 }
 
-function initSystemTheme(vm: TauriVM) {
+async function initSystemTheme(vm: TauriVM) {
 	cleanupSystemTheme(vm);
 
 	const mediaQuery = systemThemeMediaQuery();
@@ -150,8 +151,17 @@ function initSystemTheme(vm: TauriVM) {
 
 	vm.themeMediaQuery = mediaQuery;
 	vm.themeMediaQueryHandler = onThemeChange;
-	vm.darkmode = mediaQuery.matches;
-	applyTheme(mediaQuery.matches);
+
+	const windowTheme = await getCurrentWindow().theme();
+	if (windowTheme === 'dark') {
+		vm.darkmode = true;
+	} else if (windowTheme === 'light') {
+		vm.darkmode = false;
+	} else {
+		vm.darkmode = mediaQuery.matches;
+	}
+
+	applyTheme(vm.darkmode);
 	mediaQuery.addEventListener('change', onThemeChange);
 }
 
