@@ -5,7 +5,6 @@ import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { ChannelAction } from '@martichou/core_lib';
 import { gt } from 'semver';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 
 function _displayedItems(vm: TauriVM): Array<DisplayedItem> {
 	const ndisplayed = new Array<DisplayedItem>();
@@ -97,7 +96,7 @@ function isThemeMode(value: unknown): value is ThemeMode {
 	return value === 'system' || value === 'light' || value === 'dark';
 }
 
-async function setThemeMode(vm: TauriVM, mode: ThemeMode) {
+async function applyThemeMode(vm: TauriVM, mode: ThemeMode) {
 	cleanupSystemTheme(vm);
 	vm.themeMode = mode;
 
@@ -108,6 +107,10 @@ async function setThemeMode(vm: TauriVM, mode: ThemeMode) {
 		vm.darkmode = darkmode;
 		applyTheme(darkmode);
 	}
+}
+
+async function setThemeMode(vm: TauriVM, mode: ThemeMode) {
+	await applyThemeMode(vm, mode);
 
 	await vm.store.set(themeModeKey, mode);
 	await vm.store.delete(darkmodeKey);
@@ -118,18 +121,22 @@ async function getThemeMode(vm: TauriVM) {
 	const storedThemeMode = await vm.store.get(themeModeKey);
 
 	if (isThemeMode(storedThemeMode)) {
-		await setThemeMode(vm, storedThemeMode);
+		await applyThemeMode(vm, storedThemeMode);
 		return;
 	}
 
 	const legacyDarkMode = await vm.store.get(darkmodeKey);
 
 	if (typeof legacyDarkMode === 'boolean') {
-		await setThemeMode(vm, legacyDarkMode ? 'dark' : 'light');
+		const migratedThemeMode: ThemeMode = legacyDarkMode ? 'dark' : 'light';
+		await applyThemeMode(vm, migratedThemeMode);
+		await vm.store.set(themeModeKey, migratedThemeMode);
+		await vm.store.delete(darkmodeKey);
+		await vm.store.save();
 		return;
 	}
 
-	await setThemeMode(vm, 'system');
+	await applyThemeMode(vm, 'system');
 }
 
 function applyTheme(darkmode: boolean) {
@@ -151,16 +158,7 @@ async function initSystemTheme(vm: TauriVM) {
 
 	vm.themeMediaQuery = mediaQuery;
 	vm.themeMediaQueryHandler = onThemeChange;
-
-	const windowTheme = await getCurrentWindow().theme();
-	if (windowTheme === 'dark') {
-		vm.darkmode = true;
-	} else if (windowTheme === 'light') {
-		vm.darkmode = false;
-	} else {
-		vm.darkmode = mediaQuery.matches;
-	}
-
+	vm.darkmode = mediaQuery.matches;
 	applyTheme(vm.darkmode);
 	mediaQuery.addEventListener('change', onThemeChange);
 }

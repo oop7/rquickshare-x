@@ -211,8 +211,8 @@ export default {
 			isAppInForeground: false,
 			discoveryRunning: ref(false),
 			isDragHovering: ref(false),
-			darkmode: ref<boolean>(false),
-			themeMode: ref<'system' | 'light' | 'dark'>('system'),
+			darkmode: false,
+			themeMode: 'system' as 'system' | 'light' | 'dark',
 			themeMediaQuery: null as MediaQueryList | null,
 			themeMediaQueryHandler: undefined as ((event: MediaQueryListEvent) => void) | undefined,
 			transferMetrics: {} as Record<string, {
@@ -255,14 +255,13 @@ export default {
 				['autostart', true],
 				['realclose', false],
 				['startminimized', false],
-				['theme_mode', 'system'],
 				['visibility', 0],
 				['update_checker', true],
 			] as const;
 			let storeUpdated = false;
 
 			for (const [key, value] of defaultSettings) {
-				if (await this.store.get(key) === null) {
+				if (await this.store.get(key) == null) {
 					await this.store.set(key, value);
 					storeUpdated = true;
 				}
@@ -277,7 +276,7 @@ export default {
 
 			await this.getVisibility(this);
 
-			if (await this.store.get(autostartKey) === null) {
+			if (await this.store.get(autostartKey) == null) {
 				await this.setAutoStart(this, true);
 			} else {
 				await this.applyAutoStart(this);
