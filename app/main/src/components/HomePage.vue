@@ -211,6 +211,7 @@ export default {
 			discoveryRunning: ref(false),
 			isDragHovering: ref(false),
 			darkmode: ref<boolean>(false),
+			theme: ref<import('../vue_lib/types').ThemeType>('system'),
 			themeMediaQuery: null as MediaQueryList | null,
 			themeMediaQueryHandler: undefined as ((event: MediaQueryListEvent) => void) | undefined,
 			transferMetrics: {} as Record<string, {
@@ -282,7 +283,7 @@ export default {
 
 			await this.getRealclose(this);
 			await this.getStartMinimized(this);
-			this.initSystemTheme(this);
+			await this.getTheme(this);
 			await this.getDownloadPath(this);
 			await this.getUpdateChecker(this);
 

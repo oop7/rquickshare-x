@@ -42,7 +42,11 @@ function openDownloadPicker() {
 				<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
 					<label class="flex flex-row justify-between items-center">
 						<span class="label-text">Theme</span>
-						<span class="text-sm opacity-70">Follows system</span>
+						<select :value="vm.theme" @change="(e) => utils.setTheme(vm, (e.target as HTMLSelectElement).value as any)" class="bg-gray-100 dark:bg-zinc-700 text-sm rounded px-2 py-1 focus:outline-none">
+							<option value="system">Follows system</option>
+							<option value="dark">Dark mode</option>
+							<option value="light">Light mode</option>
+						</select>
 					</label>
 				</div>
 				<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
