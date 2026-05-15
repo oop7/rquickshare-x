@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use rqs_lib::Visibility;
 use tauri::{AppHandle, Emitter, Wry};
@@ -6,26 +6,28 @@ use tauri_plugin_store::{Store, StoreExt};
 
 fn _get_store(app_handle: &AppHandle) -> Arc<Store<Wry>> {
     app_handle
-    .store(".settings.json")
+        .store_builder(".settings.json")
+        .auto_save(Duration::from_millis(100))
+        .build()
         .unwrap()
 }
 
 pub fn init_default(app_handle: &AppHandle) {
     let store = _get_store(app_handle);
 
-    if store.get("autostart").is_none() {
+    if !store.has("autostart") {
         store.set("autostart", true);
     }
 
-    if store.get("realclose").is_none() {
+    if !store.has("realclose") {
         store.set("realclose", false);
     }
 
-    if store.get("visibility").is_none() {
+    if !store.has("visibility") {
         store.set("visibility", Visibility::Visible as u8);
     }
 
-    if store.get("startminimized").is_none() {
+    if !store.has("startminimized") {
         store.set("startminimized", false);
     }
 }

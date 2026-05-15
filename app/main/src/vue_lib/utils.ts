@@ -1,6 +1,6 @@
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 import { TauriVM } from './helper/ParamsHelper';
-import { autostartKey, darkmodeKey, DisplayedItem, downloadPathKey, numberToVisibility, realcloseKey, startminimizedKey, stateToDisplay, ThemeMode, themeModeKey, updateCheckerKey, visibilityKey, visibilityToNumber } from './types';
+import { autostartKey, DisplayedItem, downloadPathKey, numberToVisibility, realcloseKey, startminimizedKey, stateToDisplay, updateCheckerKey, visibilityKey, visibilityToNumber } from './types';
 import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { ChannelAction } from '@martichou/core_lib';
@@ -92,53 +92,6 @@ async function getStartMinimized(vm: TauriVM) {
 	vm.startminimized = await vm.store.get(startminimizedKey) ?? false;
 }
 
-function isThemeMode(value: unknown): value is ThemeMode {
-	return value === 'system' || value === 'light' || value === 'dark';
-}
-
-async function applyThemeMode(vm: TauriVM, mode: ThemeMode) {
-	cleanupSystemTheme(vm);
-	vm.themeMode = mode;
-
-	if (mode === 'system') {
-		await initSystemTheme(vm);
-	} else {
-		const darkmode = mode === 'dark';
-		vm.darkmode = darkmode;
-		applyTheme(darkmode);
-	}
-}
-
-async function setThemeMode(vm: TauriVM, mode: ThemeMode) {
-	await applyThemeMode(vm, mode);
-
-	await vm.store.set(themeModeKey, mode);
-	await vm.store.delete(darkmodeKey);
-	await vm.store.save();
-}
-
-async function getThemeMode(vm: TauriVM) {
-	const storedThemeMode = await vm.store.get(themeModeKey);
-
-	if (isThemeMode(storedThemeMode)) {
-		await applyThemeMode(vm, storedThemeMode);
-		return;
-	}
-
-	const legacyDarkMode = await vm.store.get(darkmodeKey);
-
-	if (typeof legacyDarkMode === 'boolean') {
-		const migratedThemeMode: ThemeMode = legacyDarkMode ? 'dark' : 'light';
-		await applyThemeMode(vm, migratedThemeMode);
-		await vm.store.set(themeModeKey, migratedThemeMode);
-		await vm.store.delete(darkmodeKey);
-		await vm.store.save();
-		return;
-	}
-
-	await applyThemeMode(vm, 'system');
-}
-
 function applyTheme(darkmode: boolean) {
 	document.documentElement.classList.toggle('dark', darkmode);
 }
@@ -147,7 +100,7 @@ function systemThemeMediaQuery() {
 	return window.matchMedia('(prefers-color-scheme: dark)');
 }
 
-async function initSystemTheme(vm: TauriVM) {
+function initSystemTheme(vm: TauriVM) {
 	cleanupSystemTheme(vm);
 
 	const mediaQuery = systemThemeMediaQuery();
@@ -159,7 +112,7 @@ async function initSystemTheme(vm: TauriVM) {
 	vm.themeMediaQuery = mediaQuery;
 	vm.themeMediaQueryHandler = onThemeChange;
 	vm.darkmode = mediaQuery.matches;
-	applyTheme(vm.darkmode);
+	applyTheme(mediaQuery.matches);
 	mediaQuery.addEventListener('change', onThemeChange);
 }
 
@@ -346,8 +299,6 @@ export const utils = {
 	getUpdateChecker,
 	setStartMinimized,
 	getStartMinimized,
-	setThemeMode,
-	getThemeMode,
 	initSystemTheme,
 	cleanupSystemTheme,
 	applyTheme

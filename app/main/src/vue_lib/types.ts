@@ -2,8 +2,6 @@ import { State } from '@martichou/core_lib/bindings/State';
 import { DeviceType } from '@martichou/core_lib/bindings/DeviceType';
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 
-export type ThemeMode = 'system' | 'light' | 'dark';
-
 export interface ToDelete {
 	id: string,
 	triggered: number
@@ -41,8 +39,6 @@ export const numberToVisibility: { [key: number]: Visibility } = {
 export const autostartKey = "autostart";
 export const realcloseKey = "realclose";
 export const startminimizedKey = "startminimized";
-export const darkmodeKey = "darkmode";
-export const themeModeKey = "theme_mode";
 export const visibilityKey = "visibility";
 export const downloadPathKey = "download_path";
 export const updateCheckerKey = "update_checker";

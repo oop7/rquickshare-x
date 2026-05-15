@@ -188,7 +188,6 @@ export default {
 		const store = await load('.settings.json', {
 			autoSave: 100,
 		});
-		await store.reload();
 		const toastStore = useToastStore();
 
 		const dialogOpen = tauriDialog;
@@ -211,8 +210,7 @@ export default {
 			isAppInForeground: false,
 			discoveryRunning: ref(false),
 			isDragHovering: ref(false),
-			darkmode: false,
-			themeMode: 'system' as 'system' | 'light' | 'dark',
+			darkmode: ref<boolean>(false),
 			themeMediaQuery: null as MediaQueryList | null,
 			themeMediaQueryHandler: undefined as ((event: MediaQueryListEvent) => void) | undefined,
 			transferMetrics: {} as Record<string, {
@@ -261,7 +259,7 @@ export default {
 			let storeUpdated = false;
 
 			for (const [key, value] of defaultSettings) {
-				if (await this.store.get(key) == null) {
+				if (!await this.store.has(key)) {
 					await this.store.set(key, value);
 					storeUpdated = true;
 				}
@@ -276,7 +274,7 @@ export default {
 
 			await this.getVisibility(this);
 
-			if (await this.store.get(autostartKey) == null) {
+			if (!await this.store.has(autostartKey)) {
 				await this.setAutoStart(this, true);
 			} else {
 				await this.applyAutoStart(this);
@@ -284,7 +282,7 @@ export default {
 
 			await this.getRealclose(this);
 			await this.getStartMinimized(this);
-			await this.getThemeMode(this);
+			this.initSystemTheme(this);
 			await this.getDownloadPath(this);
 			await this.getUpdateChecker(this);
 

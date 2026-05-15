@@ -7,7 +7,6 @@ import { EndpointInfo } from '@martichou/core_lib/bindings/EndpointInfo';
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 import { OutboundPayload } from '@martichou/core_lib/bindings/OutboundPayload';
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
-import { ThemeMode } from '../types';
 
 export interface TauriVM {
 	store: Store;
@@ -24,7 +23,6 @@ export interface TauriVM {
     realclose: boolean;
     startminimized: boolean;
     darkmode: boolean;
-    themeMode: ThemeMode;
     themeMediaQuery: MediaQueryList | null;
     themeMediaQueryHandler: ((event: MediaQueryListEvent) => void) | undefined;
     visibility: Visibility;
@@ -39,9 +37,7 @@ export interface TauriVM {
     setVisibility: (vm: TauriVM, visibility: Visibility) => Promise<void>;
     setUpdateChecker: (vm: TauriVM, enabled: boolean) => Promise<void>;
     getUpdateChecker: (vm: TauriVM) => Promise<void>;
-    setThemeMode: (vm: TauriVM, mode: ThemeMode) => Promise<void>;
-    getThemeMode: (vm: TauriVM) => Promise<void>;
-    initSystemTheme: (vm: TauriVM) => Promise<void>;
+    initSystemTheme: (vm: TauriVM) => void;
     cleanupSystemTheme: (vm: TauriVM) => void;
     applyTheme: (darkmode: boolean) => void;
 
