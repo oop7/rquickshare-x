@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.11.8 (2026-05-15)
+
+
+### Features
+
+* add theme selection setting (System, Dark, Light) with persistent storage
+
+
+### Bug Fixes
+
+* hide unnecessary window scrollbars by enforcing hidden overflow on root containers
+
+
+
 ## 0.11.7 (2026-03-12)
 
 
