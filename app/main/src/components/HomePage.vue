@@ -8,7 +8,7 @@
 		<div class="flex-1 flex flex-row">
 			<SideMenu :vm="vm" @invert-visibility="invertVisibility(vm)" @clear-sending="clearSending(vm)" />
 
-			<div class="flex-1 flex flex-col bg-white dark:bg-zinc-800 w-full max-w-full min-w-0 min-h-full rounded-tl-[3rem] p-12 h-1 overflow-y-scroll">
+			<div class="flex-1 flex flex-col bg-white dark:bg-zinc-800 w-full max-w-full min-w-0 min-h-full rounded-tl-[3rem] p-12 h-1 overflow-y-auto no-scrollbar">
 				<ContentStatus :vm="vm" @outbound-payload="(el: OutboundPayload) => outboundPayload = el" @discovery-running="discoveryRunning = true;" />
 
 				<div
