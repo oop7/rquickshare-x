@@ -62,17 +62,13 @@ async fn main() -> Result<(), anyhow::Error> {
                 .into_iter()
                 .skip(1)
                 .map(|arg| arg.trim_matches('"').to_string())
-                .filter(|arg| !arg.starts_with('-') && arg != "%1")
+                .filter(|arg| !arg.starts_with('-') && arg != "%1" && !arg.is_empty())
                 .collect();
+            // Show and focus the window first so the JS listener is active
+            open_main_window(app);
             if !files.is_empty() {
-                app.state::<AppState>()
-                    .pending_files
-                    .lock()
-                    .unwrap()
-                    .extend(files.clone());
                 let _ = app.emit("send_files", files);
             }
-            open_main_window(app);
         }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
