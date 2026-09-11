@@ -152,6 +152,7 @@ import { UnlistenFn, listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
 import { getVersion } from '@tauri-apps/api/app';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { load } from '@tauri-apps/plugin-store';
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { disable, enable } from '@tauri-apps/plugin-autostart';
@@ -373,8 +374,8 @@ export default {
 			await receiveFiles(await invoke<string[]>('take_pending_files'));
 
 			this.unlisten.push(
-				await getCurrentWindow().onDragDropEvent(async (event) => {
-					if (event.payload.type === 'over') {
+				await getCurrentWebview().onDragDropEvent(async (event) => {
+					if (event.payload.type === 'enter' || event.payload.type === 'over') {
 						this.isDragHovering = true;
 					} else if (event.payload.type === 'drop') {
 						console.log("Dropped");
