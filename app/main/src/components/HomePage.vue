@@ -355,8 +355,11 @@ export default {
 			);
 
 			const receiveFiles = async (paths: string[]) => {
-				if (paths.length === 0) return;
-				this.outboundPayload = { Files: paths } as OutboundPayload;
+				const files = paths
+					.map((path) => path.replace(/^file:\/\//, '').replace(/^\/?([A-Za-z]):\//, '$1:/'))
+					.filter((path) => path.length > 0);
+				if (files.length === 0) return;
+				this.outboundPayload = { Files: files } as OutboundPayload;
 				if (!this.discoveryRunning) await invoke('start_discovery');
 				this.discoveryRunning = true;
 			};

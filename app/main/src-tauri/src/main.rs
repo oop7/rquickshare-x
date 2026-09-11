@@ -61,7 +61,8 @@ async fn main() -> Result<(), anyhow::Error> {
             let files: Vec<String> = argv
                 .into_iter()
                 .skip(1)
-                .filter(|arg| !arg.starts_with('-'))
+                .map(|arg| arg.trim_matches('"').to_string())
+                .filter(|arg| !arg.starts_with('-') && arg != "%1")
                 .collect();
             if !files.is_empty() {
                 app.state::<AppState>()
@@ -204,7 +205,11 @@ async fn main() -> Result<(), anyhow::Error> {
                         ble_receiver,
                         rqs: Mutex::new(rqs),
                         pending_files: Mutex::new(
-                            std::env::args().skip(1).filter(|arg| !arg.starts_with('-')).collect(),
+                            std::env::args()
+                                .skip(1)
+                                .map(|arg| arg.trim_matches('"').to_string())
+                                .filter(|arg| !arg.starts_with('-') && arg != "%1")
+                                .collect(),
                         ),
                     });
                 });
