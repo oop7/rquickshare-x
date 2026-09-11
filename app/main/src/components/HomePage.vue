@@ -354,6 +354,21 @@ export default {
 				})
 			);
 
+			const receiveFiles = async (paths: string[]) => {
+				if (paths.length === 0) return;
+				this.outboundPayload = { Files: paths } as OutboundPayload;
+				if (!this.discoveryRunning) await invoke('start_discovery');
+				this.discoveryRunning = true;
+			};
+
+			this.unlisten.push(
+				await listen('send_files', async (event) => {
+					await receiveFiles(event.payload as string[]);
+				})
+			);
+
+			await receiveFiles(await invoke<string[]>('take_pending_files'));
+
 			this.unlisten.push(
 				await getCurrentWindow().onDragDropEvent(async (event) => {
 					if (event.payload.type === 'over') {

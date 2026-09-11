@@ -5,7 +5,10 @@
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
-      "timestampUrl": ""
+      "timestampUrl": "",
+      "nsis": {
+        "installerHooks": "./windows/hooks.nsh"
+      }
     },
     "icon": [
       "icons/32x32.png",

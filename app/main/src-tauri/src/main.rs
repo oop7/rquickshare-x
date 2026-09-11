@@ -39,6 +39,7 @@ pub struct AppState {
     pub sender_file: mpsc::Sender<SendInfo>,
     pub ble_receiver: broadcast::Receiver<()>,
     pub rqs: Mutex<RQS>,
+    pub pending_files: Mutex<Vec<String>>,
 }
 
 #[tokio::main]
@@ -55,8 +56,21 @@ async fn main() -> Result<(), anyhow::Error> {
             None,
         ))
         .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             trace!("tauri_plugin_single_instance: instance already running");
+            let files: Vec<String> = argv
+                .into_iter()
+                .skip(1)
+                .filter(|arg| !arg.starts_with('-'))
+                .collect();
+            if !files.is_empty() {
+                app.state::<AppState>()
+                    .pending_files
+                    .lock()
+                    .unwrap()
+                    .extend(files.clone());
+                let _ = app.emit("send_files", files);
+            }
             open_main_window(app);
         }))
         .plugin(tauri_plugin_dialog::init())
@@ -69,6 +83,7 @@ async fn main() -> Result<(), anyhow::Error> {
             cmds::get_hostname,
             cmds::send_payload,
             cmds::send_to_rs,
+            take_pending_files,
         ])
         .setup(|app| {
             // Setting up logging inside file for the app
@@ -188,6 +203,9 @@ async fn main() -> Result<(), anyhow::Error> {
                         sender_file,
                         ble_receiver,
                         rqs: Mutex::new(rqs),
+                        pending_files: Mutex::new(
+                            std::env::args().skip(1).filter(|arg| !arg.starts_with('-')).collect(),
+                        ),
                     });
                 });
             });
@@ -228,6 +246,11 @@ async fn main() -> Result<(), anyhow::Error> {
 
     info!("Application stopped");
     Ok(())
+}
+
+#[tauri::command]
+fn take_pending_files(state: tauri::State<'_, AppState>) -> Vec<String> {
+    std::mem::take(&mut *state.pending_files.lock().unwrap())
 }
 
 fn spawn_receiver_tasks(app_handle: &AppHandle) {
