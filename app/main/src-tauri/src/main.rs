@@ -14,7 +14,7 @@ use store::get_startminimized;
 #[cfg(target_os = "macos")]
 use tauri::image::Image;
 use tauri::{
-    menu::{MenuBuilder, MenuItemBuilder},
+    menu::{CheckMenuItemBuilder, MenuBuilder, MenuItemBuilder, SubmenuBuilder},
     tray::TrayIconBuilder,
     AppHandle, Emitter, Manager, Window, WindowEvent,
 };
@@ -79,17 +79,40 @@ async fn main() -> Result<(), anyhow::Error> {
             // Initialize default values for the store
             init_default(app.app_handle());
 
+            // Fetch initial configuration values
+            let visibility = get_visibility(app.app_handle());
+            let port_number = get_port(app.app_handle());
+            let download_path = get_download_path(app.app_handle());
+
             // Initialize system Tray
             let name = MenuItemBuilder::new("RQuickShare-X")
                 .enabled(false)
                 .build(app)?;
             let show = MenuItemBuilder::with_id("show", "Show").build(app)?;
+            let visible = CheckMenuItemBuilder::with_id("visible", "Visible")
+                .checked(visibility == Visibility::Visible)
+                .build(app)?;
+            let invisible = CheckMenuItemBuilder::with_id("invisible", "Invisible")
+                .checked(visibility == Visibility::Invisible)
+                .build(app)?;
+            let temporarily = CheckMenuItemBuilder::with_id(
+                "temporarily",
+                "Temporarily (1 min)",
+            )
+            .checked(visibility == Visibility::Temporarily)
+            .build(app)?;
+            let visibility_menu = Arc::new(
+                SubmenuBuilder::new(app, "Visibility")
+                    .items(&[&visible, &invisible, &temporarily])
+                    .build()?,
+            );
             let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
             let menu = MenuBuilder::new(app)
                 .item(&name)
                 .separator()
-                .items(&[&show, &quit])
+                .items(&[&show, visibility_menu.as_ref(), &quit])
                 .build()?;
+            let visibility_menu_for_handler = Arc::clone(&visibility_menu);
 
             #[cfg(target_os = "macos")]
             let icon = Image::from_bytes(include_bytes!("../icons/tray.png")).unwrap();
@@ -104,6 +127,38 @@ async fn main() -> Result<(), anyhow::Error> {
                         trace!("tray_show");
                         open_main_window(app);
                     }
+                    "visible" | "invisible" | "temporarily" => {
+                        let visibility = match event.id().as_ref() {
+                            "visible" => Visibility::Visible,
+                            "invisible" => Visibility::Invisible,
+                            "temporarily" => Visibility::Temporarily,
+                            _ => unreachable!(),
+                        };
+
+                        app.state::<AppState>()
+                            .rqs
+                            .lock()
+                            .unwrap()
+                            .change_visibility(visibility);
+                        visibility_menu_for_handler
+                            .get("visible")
+                            .unwrap()
+                            .as_check_menuitem_unchecked()
+                            .set_checked(visibility == Visibility::Visible)
+                            .unwrap();
+                        visibility_menu_for_handler
+                            .get("invisible")
+                            .unwrap()
+                            .as_check_menuitem_unchecked()
+                            .set_checked(visibility == Visibility::Invisible)
+                            .unwrap();
+                        visibility_menu_for_handler
+                            .get("temporarily")
+                            .unwrap()
+                            .as_check_menuitem_unchecked()
+                            .set_checked(visibility == Visibility::Temporarily)
+                            .unwrap();
+                    }
                     "quit" => {
                         trace!("tray_quit");
                         kill_app(app.app_handle());
@@ -113,11 +168,6 @@ async fn main() -> Result<(), anyhow::Error> {
                 .build(app)?;
 
             let _ = tray.set_icon_as_template(true);
-
-            // Fetch initial configuration values
-            let visibility = get_visibility(app.app_handle());
-            let port_number = get_port(app.app_handle());
-            let download_path = get_download_path(app.app_handle());
 
             let app_handle = app.app_handle().clone();
             // This is not optimal, but until I find a better way to init log
