@@ -385,7 +385,7 @@ dependencies = [
 name = "bluer"
 version = "0.17.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af68112f5c6019695c8b0eea68349817855f565df5b04b2477916d09fb1a901"
+checksum = "af68112f5c60196495c8b0eea68349817855f565df5b04b2477916d09fb1a901"
 dependencies = [
  "custom_debug",
  "dbus",
