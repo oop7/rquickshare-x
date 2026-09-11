@@ -379,11 +379,7 @@ export default {
 					} else if (event.payload.type === 'drop') {
 						console.log("Dropped");
 						this.isDragHovering = false;
-						this.outboundPayload = {
-							Files: event.payload.paths
-						} as OutboundPayload;
-						if (!this.discoveryRunning) await invoke('start_discovery');
-						this.discoveryRunning = true;
+						await receiveFiles(event.payload.paths ?? []);
 					} else {
 						this.isDragHovering = false;
 					}
