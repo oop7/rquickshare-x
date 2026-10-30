@@ -39,7 +39,7 @@ use crate::securemessage::{
 use crate::sharing_nearby::{paired_key_result_frame, text_metadata};
 use crate::utils::{
     encode_point, gen_ecdsa_keypair, gen_random, get_download_dir, hkdf_extract_expand,
-    stream_read_exact, to_four_digit_string, DeviceType, RemoteDeviceInfo,
+    safe_file_name, stream_read_exact, to_four_digit_string, DeviceType, RemoteDeviceInfo,
 };
 use crate::{location_nearby_connections, sharing_nearby};
 
@@ -847,10 +847,13 @@ impl InboundRequest {
             let mut total_bytes: u64 = 0;
 
             for file in &introduction.file_metadata {
-                info!("File name: {}", file.name());
+                // Never trust the remote name as a path: keep only a safe
+                // file name, or a sender could write outside the download dir.
+                let file_name = safe_file_name(file.name());
+                info!("File name: {} (sent as {:?})", file_name, file.name());
 
                 let mut dest = get_download_dir();
-                dest.push(file.name());
+                dest.push(&file_name);
 
                 info!("Destination: {:?}", dest);
                 if dest.exists() {
@@ -858,7 +861,7 @@ impl InboundRequest {
                     dest.pop();
 
                     loop {
-                        dest.push(format!("{}_{}", counter, file.name()));
+                        dest.push(format!("{}_{}", counter, file_name));
                         if !dest.exists() {
                             break;
                         }
@@ -878,7 +881,7 @@ impl InboundRequest {
                 };
                 total_bytes += info.total_size as u64;
                 self.state.transferred_files.insert(file.payload_id(), info);
-                files_name.push(file.name().to_owned());
+                files_name.push(file_name);
             }
 
             let metadata = TransferMetadata {

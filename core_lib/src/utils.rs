@@ -104,6 +104,21 @@ pub fn gen_mdns_endpoint_info(device_type: u8, device_name: &str) -> String {
     URL_SAFE_NO_PAD.encode(&record)
 }
 
+/// Reduces a file name sent by a remote device to a single, safe path
+/// component: only the last component of any path is kept (so `../x`,
+/// `/etc/x` and `dir\\x` become `x`), control characters are dropped, and
+/// an empty result (`""`, `.`, `..`, `/`) becomes `unnamed`. Without this a
+/// sender could write outside the download directory.
+pub fn safe_file_name(name: &str) -> String {
+    let last = name.rsplit(|c| c == '/' || c == '\\').next().unwrap_or("");
+    let cleaned: String = last.chars().filter(|c| !c.is_control()).collect();
+    if cleaned.is_empty() || cleaned == "." || cleaned == ".." {
+        "unnamed".to_string()
+    } else {
+        cleaned
+    }
+}
+
 pub fn parse_mdns_endpoint_info(encoded_str: &str) -> Result<(DeviceType, String), anyhow::Error> {
     let decoded_bytes = URL_SAFE_NO_PAD.decode(encoded_str)?;
     if decoded_bytes.len() < 19 {
@@ -243,5 +258,35 @@ mod tests {
 
         assert_eq!(parse_info.1, device_name);
         assert_eq!(parse_info.0, device_type);
+    }
+}
+
+#[cfg(test)]
+mod safe_file_name_tests {
+    use super::*;
+
+    #[test]
+    fn plain_names_are_kept() {
+        assert_eq!(safe_file_name("foto.jpg"), "foto.jpg");
+        assert_eq!(safe_file_name("Foto ñandú 🦊.jpg"), "Foto ñandú 🦊.jpg");
+        assert_eq!(safe_file_name(".hidden"), ".hidden");
+    }
+
+    #[test]
+    fn paths_are_reduced_to_their_last_component() {
+        assert_eq!(safe_file_name("../../.bashrc"), ".bashrc");
+        assert_eq!(safe_file_name("/etc/passwd"), "passwd");
+        assert_eq!(safe_file_name("a/b/c.txt"), "c.txt");
+        assert_eq!(safe_file_name("dir\\evil.exe"), "evil.exe");
+    }
+
+    #[test]
+    fn empty_dots_and_control_characters_get_a_fallback_or_are_stripped() {
+        assert_eq!(safe_file_name(""), "unnamed");
+        assert_eq!(safe_file_name(".."), "unnamed");
+        assert_eq!(safe_file_name("."), "unnamed");
+        assert_eq!(safe_file_name("/"), "unnamed");
+        assert_eq!(safe_file_name("a\nb.txt"), "ab.txt");
+        assert_eq!(safe_file_name("a\0b"), "ab");
     }
 }
