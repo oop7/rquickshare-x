@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
 
@@ -104,13 +105,112 @@ pub fn gen_mdns_endpoint_info(device_type: u8, device_name: &str) -> String {
     URL_SAFE_NO_PAD.encode(&record)
 }
 
+/// Name to show for a discovered endpoint: the advertised display name, or
+/// the mDNS hostname (without the `.local.` suffix) when the compact n=
+/// record carries no name.
+pub fn mdns_display_name(name: String, hostname: &str) -> String {
+    if !name.is_empty() {
+        return name;
+    }
+    hostname
+        .trim_end_matches('.')
+        .trim_end_matches(".local")
+        .to_string()
+}
+
+/// Remembers the last real display name seen per endpoint id (`ip:port`).
+/// Android phones alternate between compact n= records (no name) and long ones
+/// (with the name) for the same endpoint, and pick a new mDNS hostname each
+/// time Quick Share is reopened, so without this the device keeps flipping
+/// back to its hostname. The names can be saved to disk so that a later
+/// session shows them before the phone sends the long record again.
+#[derive(Default)]
+pub struct KnownNames {
+    names: HashMap<String, String>,
+    dirty: bool,
+}
+
+impl KnownNames {
+    /// Returns the display name to show for the endpoint `id` announced with
+    /// `name` (possibly empty) and the mDNS `hostname`: `Name (hostname)` if
+    /// this record or a previous one carried the real name, else the hostname.
+    pub fn resolve(&mut self, id: &str, name: String, hostname: &str) -> String {
+        let host = mdns_display_name(String::new(), hostname);
+        if !name.is_empty() {
+            let name = name.replace(['\t', '\n', '\r'], " ");
+            if self.names.get(id) != Some(&name) {
+                self.names.insert(id.to_string(), name.clone());
+                self.dirty = true;
+            }
+            return format!("{name} ({host})");
+        }
+        match self.names.get(id) {
+            Some(known) => format!("{known} ({host})"),
+            None => host,
+        }
+    }
+
+    /// True when a name was learned since the last `save_to`.
+    pub fn is_dirty(&self) -> bool {
+        self.dirty
+    }
+
+    /// Reads the names saved by `save_to`. A missing or unreadable file just
+    /// gives an empty set.
+    pub fn load_from(path: &Path) -> Self {
+        let mut names = HashMap::new();
+        if let Ok(text) = std::fs::read_to_string(path) {
+            for line in text.lines() {
+                if let Some((id, name)) = line.split_once('\t') {
+                    if !id.is_empty() && !name.is_empty() {
+                        names.insert(id.to_string(), name.to_string());
+                    }
+                }
+            }
+        }
+        Self {
+            names,
+            dirty: false,
+        }
+    }
+
+    /// Writes the names as `id<TAB>name` lines, creating the parent directory.
+    pub fn save_to(&mut self, path: &Path) -> std::io::Result<()> {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let mut entries: Vec<_> = self.names.iter().collect();
+        entries.sort();
+        let text: String = entries
+            .into_iter()
+            .map(|(id, name)| format!("{id}\t{name}\n"))
+            .collect();
+        std::fs::write(path, text)?;
+        self.dirty = false;
+        Ok(())
+    }
+
+    /// Where the names are saved by default: `$XDG_CACHE_HOME/rquickshare/known_names.tsv`.
+    pub fn default_path() -> Option<PathBuf> {
+        directories::BaseDirs::new()
+            .map(|dirs| dirs.cache_dir().join("rquickshare").join("known_names.tsv"))
+    }
+}
+
 pub fn parse_mdns_endpoint_info(encoded_str: &str) -> Result<(DeviceType, String), anyhow::Error> {
     let decoded_bytes = URL_SAFE_NO_PAD.decode(encoded_str)?;
-    if decoded_bytes.len() < 19 {
+    // 17 bytes: 1 byte of type/visibility + 16 bytes of endpoint id/salt.
+    // Some devices (e.g. Samsung phones running Google's Quick Share) only
+    // advertise this prefix over mDNS, without the name length and the name.
+    if decoded_bytes.len() < 17 {
         return Err(anyhow!("Invalid data length"));
     }
 
     let device_type = (decoded_bytes[0] >> 1) & 0x7;
+    if decoded_bytes.len() == 17 {
+        return Ok((DeviceType::from_raw_value(device_type), String::new()));
+    }
+
     let name_length = decoded_bytes[17] as usize;
     if 18 + name_length > decoded_bytes.len() {
         return Err(anyhow!("Invalid name length"));
@@ -231,6 +331,29 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_parse_compact_mdns_info_without_name() {
+        // Real n= record advertised by a Samsung phone running Google's
+        // Quick Share: a 17-byte prefix with no name length and no name.
+        let parse_info = parse_mdns_endpoint_info("MvPQgnpsKGauFgCi_B4tB0s").unwrap();
+
+        assert_eq!(parse_info.0, DeviceType::Phone);
+        assert_eq!(parse_info.1, "");
+    }
+
+    #[test]
+    fn test_mdns_display_name_falls_back_to_hostname() {
+        assert_eq!(
+            mdns_display_name("Kira Foxybyte".to_string(), "Android_JAFGJD3I.local."),
+            "Kira Foxybyte"
+        );
+        assert_eq!(
+            mdns_display_name(String::new(), "Android_JAFGJD3I.local."),
+            "Android_JAFGJD3I"
+        );
+        assert_eq!(mdns_display_name(String::new(), "pixel.local"), "pixel");
+    }
+
+    #[test]
     fn test_gen_and_parse_mdns_info() {
         let device_name = "a_device_name";
         let device_type = DeviceType::Laptop;
@@ -243,5 +366,124 @@ mod tests {
 
         assert_eq!(parse_info.1, device_name);
         assert_eq!(parse_info.0, device_type);
+    }
+}
+
+#[cfg(test)]
+mod known_names_tests {
+    use super::*;
+
+    const ID: &str = "192.168.0.185:53601";
+
+    #[test]
+    fn known_names_keep_the_real_name_for_compact_records() {
+        let mut names = KnownNames::default();
+        // First announcement is compact: only the hostname is known.
+        assert_eq!(
+            names.resolve(ID, String::new(), "Android_VO9RJ6FX.local."),
+            "Android_VO9RJ6FX"
+        );
+        // A long announcement brings the real name; the hostname stays visible.
+        assert_eq!(
+            names.resolve(ID, "Kira Foxybyte".to_string(), "Android_VO9RJ6FX.local."),
+            "Kira Foxybyte (Android_VO9RJ6FX)"
+        );
+        // The next compact announcement must not drop it.
+        assert_eq!(
+            names.resolve(ID, String::new(), "Android_VO9RJ6FX.local."),
+            "Kira Foxybyte (Android_VO9RJ6FX)"
+        );
+        // The phone picks a new mDNS hostname when Quick Share is reopened,
+        // but keeps its ip:port, so the name survives and the hostname follows.
+        assert_eq!(
+            names.resolve(ID, String::new(), "Android_IEYSPSV7.local."),
+            "Kira Foxybyte (Android_IEYSPSV7)"
+        );
+        // Another endpoint is still resolved by its own hostname.
+        assert_eq!(
+            names.resolve("192.168.0.20:53601", String::new(), "pixel.local."),
+            "pixel"
+        );
+    }
+
+    #[test]
+    fn known_names_take_a_renamed_device_right_away() {
+        let mut names = KnownNames::default();
+        names.resolve(ID, "Kira Foxybyte".to_string(), "Android_X.local.");
+        assert_eq!(
+            names.resolve(ID, "Kira Nueva".to_string(), "Android_X.local."),
+            "Kira Nueva (Android_X)"
+        );
+        assert!(names.is_dirty());
+        assert_eq!(
+            names.resolve(ID, String::new(), "Android_X.local."),
+            "Kira Nueva (Android_X)"
+        );
+    }
+}
+
+#[cfg(test)]
+mod known_names_persistence_tests {
+    use super::*;
+
+    const ID: &str = "192.168.0.185:53601";
+
+    fn tmp_file(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("rqs_lib-known-names-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir.join(name)
+    }
+
+    #[test]
+    fn known_names_survive_a_restart() {
+        let path = tmp_file("survive.json");
+        let _ = std::fs::remove_file(&path);
+
+        let mut names = KnownNames::load_from(&path);
+        names.resolve(ID, "Kira Foxybyte".to_string(), "Android_VO9RJ6FX.local.");
+        names.save_to(&path).unwrap();
+
+        // A fresh instance (new app session) already knows the name, even
+        // when the phone only sends compact records.
+        let mut again = KnownNames::load_from(&path);
+        assert_eq!(
+            again.resolve(ID, String::new(), "Android_WBF7Y4LB.local."),
+            "Kira Foxybyte (Android_WBF7Y4LB)"
+        );
+    }
+
+    #[test]
+    fn known_names_load_from_a_missing_or_broken_file_is_empty() {
+        let missing = tmp_file("missing.json");
+        let _ = std::fs::remove_file(&missing);
+        let mut names = KnownNames::load_from(&missing);
+        assert_eq!(
+            names.resolve(ID, String::new(), "Android_X.local."),
+            "Android_X"
+        );
+
+        let broken = tmp_file("broken.json");
+        std::fs::write(&broken, "{not json").unwrap();
+        let mut names = KnownNames::load_from(&broken);
+        assert_eq!(
+            names.resolve(ID, String::new(), "Android_X.local."),
+            "Android_X"
+        );
+    }
+
+    #[test]
+    fn known_names_only_need_saving_after_learning_a_name() {
+        let mut names = KnownNames::default();
+        assert!(!names.is_dirty());
+        names.resolve(ID, String::new(), "Android_X.local.");
+        assert!(!names.is_dirty());
+        names.resolve(ID, "Kira Foxybyte".to_string(), "Android_X.local.");
+        assert!(names.is_dirty());
+        // Seeing the same name again changes nothing.
+        let path = tmp_file("dirty.json");
+        names.save_to(&path).unwrap();
+        assert!(!names.is_dirty());
+        names.resolve(ID, "Kira Foxybyte".to_string(), "Android_X.local.");
+        assert!(!names.is_dirty());
     }
 }
