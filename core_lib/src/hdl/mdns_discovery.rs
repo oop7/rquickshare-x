@@ -124,6 +124,38 @@ impl MDnsDiscovery {
             }
         }
 
+        // Without this the daemon thread outlives the discovery and keeps
+        // sending to a receiver nobody reads ("sending on a closed channel"
+        // on every announcement, for the rest of the process).
+        // Wait for the daemon to confirm: dropping the receiver right away
+        // makes it log "failed to send response of shutdown".
+        match self.daemon.shutdown() {
+            Ok(done) => {
+                let _ = done.recv_async().await;
+                info!("MDnsDiscovery: daemon shut down");
+            }
+            Err(e) => warn!("MDnsDiscovery: daemon shutdown failed: {e}"),
+        }
+
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A cancelled token makes `run` return (and shut its daemon down)
+    /// instead of browsing forever.
+    #[tokio::test]
+    async fn run_returns_as_soon_as_the_token_is_cancelled() {
+        let (sender, _receiver) = broadcast::channel(4);
+        let discovery = MDnsDiscovery::new(sender).unwrap();
+        let ctk = CancellationToken::new();
+        ctk.cancel();
+        tokio::time::timeout(std::time::Duration::from_secs(5), discovery.run(ctk))
+            .await
+            .expect("run must return once cancelled")
+            .unwrap();
     }
 }
