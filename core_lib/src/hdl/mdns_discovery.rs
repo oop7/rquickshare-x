@@ -7,7 +7,7 @@ use tokio::sync::broadcast;
 use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
 
-use crate::utils::{is_not_self_ip, parse_mdns_endpoint_info};
+use crate::utils::{is_not_self_ip, mdns_display_name, parse_mdns_endpoint_info};
 use crate::DeviceType;
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize, TS)]
@@ -82,6 +82,10 @@ impl MDnsDiscovery {
                                         Ok(r) => r,
                                         Err(_) => continue
                                     };
+
+                                    // Compact n= records carry no display name: fall back to
+                                    // the mDNS hostname so the device is still listed.
+                                    let dn = mdns_display_name(dn, info.get_hostname());
 
                                     let ip_port = format!("{ip}:{port}");
                                     let fullname = info.get_fullname().to_string();

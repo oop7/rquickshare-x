@@ -104,13 +104,33 @@ pub fn gen_mdns_endpoint_info(device_type: u8, device_name: &str) -> String {
     URL_SAFE_NO_PAD.encode(&record)
 }
 
+/// Name to show for a discovered endpoint: the advertised display name, or
+/// the mDNS hostname (without the `.local.` suffix) when the compact n=
+/// record carries no name.
+pub fn mdns_display_name(name: String, hostname: &str) -> String {
+    if !name.is_empty() {
+        return name;
+    }
+    hostname
+        .trim_end_matches('.')
+        .trim_end_matches(".local")
+        .to_string()
+}
+
 pub fn parse_mdns_endpoint_info(encoded_str: &str) -> Result<(DeviceType, String), anyhow::Error> {
     let decoded_bytes = URL_SAFE_NO_PAD.decode(encoded_str)?;
-    if decoded_bytes.len() < 19 {
+    // 17 bytes: 1 byte of type/visibility + 16 bytes of endpoint id/salt.
+    // Some devices (e.g. Samsung phones running Google's Quick Share) only
+    // advertise this prefix over mDNS, without the name length and the name.
+    if decoded_bytes.len() < 17 {
         return Err(anyhow!("Invalid data length"));
     }
 
     let device_type = (decoded_bytes[0] >> 1) & 0x7;
+    if decoded_bytes.len() == 17 {
+        return Ok((DeviceType::from_raw_value(device_type), String::new()));
+    }
+
     let name_length = decoded_bytes[17] as usize;
     if 18 + name_length > decoded_bytes.len() {
         return Err(anyhow!("Invalid name length"));
@@ -229,6 +249,29 @@ pub fn is_not_self_ip(ip_address: &Ipv4Addr) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_parse_compact_mdns_info_without_name() {
+        // Real n= record advertised by a Samsung phone running Google's
+        // Quick Share: a 17-byte prefix with no name length and no name.
+        let parse_info = parse_mdns_endpoint_info("MvPQgnpsKGauFgCi_B4tB0s").unwrap();
+
+        assert_eq!(parse_info.0, DeviceType::Phone);
+        assert_eq!(parse_info.1, "");
+    }
+
+    #[test]
+    fn test_mdns_display_name_falls_back_to_hostname() {
+        assert_eq!(
+            mdns_display_name("Kira Foxybyte".to_string(), "Android_JAFGJD3I.local."),
+            "Kira Foxybyte"
+        );
+        assert_eq!(
+            mdns_display_name(String::new(), "Android_JAFGJD3I.local."),
+            "Android_JAFGJD3I"
+        );
+        assert_eq!(mdns_display_name(String::new(), "pixel.local"), "pixel");
+    }
 
     #[test]
     fn test_gen_and_parse_mdns_info() {
