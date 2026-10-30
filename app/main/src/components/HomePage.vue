@@ -151,6 +151,7 @@ import { ref, nextTick } from 'vue'
 import { UnlistenFn, listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
 import { getVersion } from '@tauri-apps/api/app';
+import { mergeFiles } from '../composables/files';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { load } from '@tauri-apps/plugin-store';
@@ -360,7 +361,11 @@ export default {
 					.map((path) => path.replace(/^file:\/\//, '').replace(/^\/?([A-Za-z]):\//, '$1:/'))
 					.filter((path) => path.length > 0);
 				if (files.length === 0) return;
-				this.outboundPayload = { Files: files } as OutboundPayload;
+				// Files sent while the window is already open add to the
+				// selection instead of replacing it.
+				this.outboundPayload = {
+					Files: mergeFiles(this.outboundPayload?.Files, files)
+				} as OutboundPayload;
 				if (!this.discoveryRunning) await invoke('start_discovery');
 				this.discoveryRunning = true;
 			};
