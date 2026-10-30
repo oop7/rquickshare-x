@@ -750,6 +750,37 @@ impl InboundRequest {
             return Err(anyhow!(crate::errors::AppError::NotAnError));
         }
 
+        // Like the reference implementation, keep reading until the frame
+        // type this state expects arrives: some senders interleave an extra
+        // PAIRED_KEY_RESULT (or another setup frame) before the INTRODUCTION,
+        // and failing here used to drop the whole transfer.
+        let expected = match self.state.state {
+            State::SentConnectionResponse => Some((
+                sharing_nearby::v1_frame::FrameType::PairedKeyEncryption,
+                v1_frame.paired_key_encryption.is_some(),
+            )),
+            State::SentPairedKeyResult => Some((
+                sharing_nearby::v1_frame::FrameType::PairedKeyResult,
+                v1_frame.paired_key_result.is_some(),
+            )),
+            State::ReceivedPairedKeyResult => Some((
+                sharing_nearby::v1_frame::FrameType::Introduction,
+                v1_frame.introduction.is_some(),
+            )),
+            _ => None,
+        };
+        if let Some((wanted, present)) = expected {
+            if !present {
+                info!(
+                    "Skipping {:?} frame while waiting for {:?} ({:?})",
+                    v1_frame.r#type(),
+                    wanted,
+                    self.state.state
+                );
+                return Ok(());
+            }
+        }
+
         match self.state.state {
             State::SentConnectionResponse => {
                 debug!("Processing State::SentConnectionResponse");
@@ -1365,5 +1396,75 @@ impl InboundRequest {
         // some spare time to process channel's message. Otherwise it
         // get spammed by new requests. Currently set to 10 micro secs.
         tokio::time::sleep(SANITY_DURATION).await;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::sharing_nearby::v1_frame::FrameType;
+    use tokio::net::TcpListener;
+
+    async fn inbound_in(state: State) -> InboundRequest {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let (socket, _) = tokio::join!(TcpStream::connect(addr), listener.accept());
+        let (sender, _) = tokio::sync::broadcast::channel(8);
+        let mut ir = InboundRequest::new(socket.unwrap(), "test".into(), sender);
+        ir.state.state = state;
+        ir
+    }
+
+    fn frame(r#type: FrameType) -> sharing_nearby::Frame {
+        let mut v1 = sharing_nearby::V1Frame {
+            r#type: Some(r#type.into()),
+            ..Default::default()
+        };
+        match r#type {
+            FrameType::PairedKeyResult => {
+                v1.paired_key_result = Some(sharing_nearby::PairedKeyResultFrame {
+                    status: Some(paired_key_result_frame::Status::Unable.into()),
+                });
+            }
+            FrameType::PairedKeyEncryption => {
+                v1.paired_key_encryption = Some(sharing_nearby::PairedKeyEncryptionFrame {
+                    secret_id_hash: Some(vec![0; 6]),
+                    signed_data: Some(vec![0; 72]),
+                    ..Default::default()
+                });
+            }
+            _ => {}
+        }
+        sharing_nearby::Frame {
+            version: Some(sharing_nearby::frame::Version::V1.into()),
+            v1: Some(v1),
+        }
+    }
+
+    #[tokio::test]
+    async fn a_frame_of_another_type_is_skipped_while_waiting_for_the_introduction() {
+        // Some senders send an extra PAIRED_KEY_RESULT (or another frame)
+        // before the INTRODUCTION; the reference implementation keeps reading
+        // until the expected frame type arrives instead of dropping the
+        // connection ("Missing required fields (ReceivedPairedKeyResult)").
+        let mut ir = inbound_in(State::ReceivedPairedKeyResult).await;
+        ir.process_transfer_setup(&frame(FrameType::PairedKeyResult))
+            .await
+            .expect("a stray frame must not abort the transfer");
+        assert_eq!(ir.state.state, State::ReceivedPairedKeyResult);
+    }
+
+    #[tokio::test]
+    async fn a_frame_of_another_type_is_skipped_while_waiting_for_the_paired_key_result() {
+        let mut ir = inbound_in(State::SentPairedKeyResult).await;
+        ir.process_transfer_setup(&frame(FrameType::PairedKeyEncryption))
+            .await
+            .expect("a stray frame must not abort the transfer");
+        assert_eq!(ir.state.state, State::SentPairedKeyResult);
+        // The expected one still moves the state machine forward.
+        ir.process_transfer_setup(&frame(FrameType::PairedKeyResult))
+            .await
+            .unwrap();
+        assert_eq!(ir.state.state, State::ReceivedPairedKeyResult);
     }
 }
